@@ -1,0 +1,21 @@
+.{
+    .name = "azure-core",
+    .version = "0.0.1",
+
+    .dependencies = .{
+        .tlsz = .{
+            .url = "https://github.com/kamlesh-nb/tlsz/archive/refs/tags/v0.0.5.tar.gz",
+            .hash = "12208ed5a4ef2cfcda79ed06b98cdf3c5dd42a9cb511fc492be3ef05d66978015286",
+        },
+        .fetchz = .{
+            .url = "https://github.com/kamlesh-nb/fetch-z/archive/refs/tags/v0.0.4.tar.gz",
+            .hash = "12207b326158af0600dc1835ffc1fd8c137df5d23f6f65c75391f7ab64104e532e86",
+        },
+        .httpz = .{
+            .url = "https://github.com/kamlesh-nb/http-z/archive/refs/tags/v0.0.3.tar.gz",
+            .hash = "1220a7907f45c0926070b241c5d826257e687a0cba67b32f36f7ea8196b80737a6c8",
+        },
+    },
+
+    .paths = .{"."},
+}
