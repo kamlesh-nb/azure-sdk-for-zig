@@ -24,6 +24,21 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
 
+    lib.root_module.addImport("buffer", b.dependency("buffer", .{
+        .target = target,
+        .optimize = optimize,
+    }).module("buffer"));
+
+    lib.root_module.addImport("datetime", b.dependency("datetime", .{
+        .target = target,
+        .optimize = optimize,
+    }).module("datetime"));
+
+    lib.root_module.addImport("httpz", b.dependency("httpz", .{
+        .target = target,
+        .optimize = optimize,
+    }).module("http-z"));
+
     // This declares intent for the library to be installed into the standard
     // location when the user invokes the "install" step (the default step when
     // running `zig build`).
@@ -35,6 +50,21 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = optimize,
     });
+
+    exe.root_module.addImport("buffer", b.dependency("buffer", .{
+        .target = target,
+        .optimize = optimize,
+    }).module("buffer"));
+
+    exe.root_module.addImport("datetime", b.dependency("datetime", .{
+        .target = target,
+        .optimize = optimize,
+    }).module("datetime"));
+
+    exe.root_module.addImport("httpz", b.dependency("httpz", .{
+        .target = target,
+        .optimize = optimize,
+    }).module("http-z"));
 
     // This declares intent for the executable to be installed into the
     // standard location when the user invokes the "install" step (the default

@@ -1,5 +1,5 @@
 .{
-    .name = "azure-core",
+    .name = "azcore",
     .version = "0.0.1",
 
     .dependencies = .{
@@ -12,8 +12,8 @@
             .hash = "12207b326158af0600dc1835ffc1fd8c137df5d23f6f65c75391f7ab64104e532e86",
         },
         .httpz = .{
-            .url = "https://github.com/kamlesh-nb/http-z/archive/refs/tags/v0.0.3.tar.gz",
-            .hash = "1220a7907f45c0926070b241c5d826257e687a0cba67b32f36f7ea8196b80737a6c8",
+            .url = "https://github.com/kamlesh-nb/http-z/archive/refs/tags/v0.0.4.tar.gz",
+            .hash = "122025109c7e73f728e489d63057c34f700171063f67fe8d746e53bcb440241c3d1a",
         },
     },
 
