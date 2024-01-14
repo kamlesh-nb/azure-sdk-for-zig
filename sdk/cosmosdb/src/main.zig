@@ -17,7 +17,7 @@ pub fn main() !void {
     var authorization = try Authorization.init(allocator);
     defer authorization.deinit();
 
-    const chabi = "6MmwhrkzNbAqogOO3XLcs5wiVC3yXjLUs0mX2v6kWWTzf1i6RZsdikB9h1q7Qi4UBb3jX3uuhL3JACDbd2TTOg==";
+    const chabi = "==";
 
     try authorization.genAuthSig(Method.get, E.ResourceType.dbs, "dbs/floki", chabi);
     const auth = try authorization.auth.getWritten();
