@@ -1,8 +1,8 @@
 const std = @import("std");
 const Client = @import("fetch").Client;
-const httpz = @import("http");
-const Request = httpz.Request;
-const Response = httpz.Response;
+const http = @import("http");
+const Request = http.Request;
+const Response = http.Response;
 
 const HttpClient = @This();
 
