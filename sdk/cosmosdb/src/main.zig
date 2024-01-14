@@ -1,10 +1,10 @@
 const std = @import("std");
 const E = @import("enums.zig");
 const Authorization  = @import("authorization.zig");
-const httpz = @import("httpz");
-const Method = httpz.Method;
-const Request = httpz.Request;
-const Response = httpz.Response;
+const http = @import("http");
+const Method = http.Method;
+const Request = http.Request;
+const Response = http.Response;
 
 
 pub fn main() !void {

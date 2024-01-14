@@ -1,6 +1,6 @@
 const std = @import("std");
-const Client = @import("fetchz").Client;
-const httpz = @import("httpz");
+const Client = @import("fetch").Client;
+const httpz = @import("http");
 const Request = httpz.Request;
 const Response = httpz.Response;
 

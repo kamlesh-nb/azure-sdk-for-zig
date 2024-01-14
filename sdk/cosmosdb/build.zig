@@ -34,10 +34,10 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     }).module("datetime"));
 
-    lib.root_module.addImport("httpz", b.dependency("httpz", .{
+    lib.root_module.addImport("http", b.dependency("http", .{
         .target = target,
         .optimize = optimize,
-    }).module("http-z"));
+    }).module("http"));
 
     // This declares intent for the library to be installed into the standard
     // location when the user invokes the "install" step (the default step when
@@ -61,10 +61,10 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     }).module("datetime"));
 
-    exe.root_module.addImport("httpz", b.dependency("httpz", .{
+    exe.root_module.addImport("http", b.dependency("http", .{
         .target = target,
         .optimize = optimize,
-    }).module("http-z"));
+    }).module("http"));
 
     // This declares intent for the executable to be installed into the
     // standard location when the user invokes the "install" step (the default

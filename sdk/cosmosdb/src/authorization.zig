@@ -3,8 +3,8 @@ const Buffer = @import("buffer");
 const Enums = @import("enums.zig");
 const date = @import("datetime").datetime;
 const tz = @import("datetime").timezones;
-const httpz = @import("httpz");
-const Method = httpz.Method;
+const http = @import("http");
+const Method = http.Method;
 
 const ResourceType = Enums.ResourceType;
 const DatabaseThoughputMode = Enums.DatabaseThoughputMode;

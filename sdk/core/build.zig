@@ -16,15 +16,20 @@ pub fn build(b: *std.Build) void {
         .root_source_file = .{ .path = "src/root.zig" },
     });
 
-    lib.root_module.addImport("fetchz", b.dependency("fetchz", .{
+    lib.root_module.addImport("fetch", b.dependency("fetch", .{
         .target = target,
         .optimize = optimize,
-    }).module("fetch-z"));
+    }).module("fetch"));
 
-    lib.root_module.addImport("httpz", b.dependency("httpz", .{
+    lib.root_module.addImport("http", b.dependency("http", .{
         .target = target,
         .optimize = optimize,
-    }).module("http-z"));
+    }).module("http"));
+
+    lib.root_module.addImport("tls", b.dependency("tls", .{
+        .target = target,
+        .optimize = optimize,
+    }).module("tls"));
 
     b.installArtifact(lib);
 
@@ -35,20 +40,20 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
 
-    exe.root_module.addImport("fetchz", b.dependency("fetchz", .{
+    exe.root_module.addImport("fetch", b.dependency("fetch", .{
         .target = target,
         .optimize = optimize,
-    }).module("fetch-z"));
+    }).module("fetch"));
 
-    exe.root_module.addImport("httpz", b.dependency("httpz", .{
+    exe.root_module.addImport("http", b.dependency("http", .{
         .target = target,
         .optimize = optimize,
-    }).module("http-z"));
+    }).module("http"));
 
-    exe.root_module.addImport("tlsz", b.dependency("tlsz", .{
+    exe.root_module.addImport("tls", b.dependency("tls", .{
         .target = target,
         .optimize = optimize,
-    }).module("tls-z"));
+    }).module("tls"));
 
     b.installArtifact(exe);
 
@@ -81,5 +86,4 @@ pub fn build(b: *std.Build) void {
     const test_step = b.step("test", "Run unit tests");
     test_step.dependOn(&run_lib_unit_tests.step);
     test_step.dependOn(&run_exe_unit_tests.step);
-
 }

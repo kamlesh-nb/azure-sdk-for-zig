@@ -3,17 +3,17 @@
     .version = "0.0.1",
 
     .dependencies = .{
-        .tlsz = .{
-            .url = "https://github.com/kamlesh-nb/tlsz/archive/refs/tags/v0.0.5.tar.gz",
-            .hash = "12208ed5a4ef2cfcda79ed06b98cdf3c5dd42a9cb511fc492be3ef05d66978015286",
+        .http = .{
+            .url = "https://github.com/kamlesh-nb/http/archive/refs/tags/v0.0.1.tar.gz",
+            .hash = "1220351df79e05bd468df39f7fd7c3035e3e82ebe47e34b8553f80fcfc64cd04e79d",
         },
-        .fetchz = .{
-            .url = "https://github.com/kamlesh-nb/fetch-z/archive/refs/tags/v0.0.4.tar.gz",
-            .hash = "12207b326158af0600dc1835ffc1fd8c137df5d23f6f65c75391f7ab64104e532e86",
+        .tls = .{
+            .url = "https://github.com/kamlesh-nb/tls/archive/refs/tags/v0.0.1.tar.gz",
+            .hash = "12200386ca38d37e25b820cfc94780be2095a6e04818c0ed51c5b6d62021c168197c",
         },
-        .httpz = .{
-            .url = "https://github.com/kamlesh-nb/http-z/archive/refs/tags/v0.0.4.tar.gz",
-            .hash = "122025109c7e73f728e489d63057c34f700171063f67fe8d746e53bcb440241c3d1a",
+        .fetch = .{
+            .url = "https://github.com/kamlesh-nb/fetch/archive/refs/tags/v0.0.1.tar.gz",
+            .hash = "12200ad6e0ac0405f5bd58e0ece205ff46230f97bdc29383289658786c88c132aa46",
         },
     },
 
