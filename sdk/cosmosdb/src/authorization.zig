@@ -62,12 +62,13 @@ pub fn genAuthSig(self: *Authorization, verb: Method, resourceType: ResourceType
     const signature = std.base64.standard.Encoder.encode(&buf, &hmacPayload);
 
     _ = try self.authSig.write("type={s}&ver={s}&sig={s}", .{ keyType, tokenVersion, signature });
- 
-    const authEscaped = try Uri.escapeString(self.allocator, try self.authSig.getWritten());
-    _ = try self.auth.write("{s}", .{authEscaped});
-    
-    self.allocator.free(authEscaped);
+    // std.debug.print("{s}\n", .{try self.authSig.getWritten()});
 
+    const authEscaped = try Uri.escapeString(self.allocator, try self.authSig.getWritten());
+    // std.debug.print("{s}\n", .{authEscaped});
+    _ = try self.auth.write("{s}", .{authEscaped});
+
+    self.allocator.free(authEscaped);
 }
 
 pub fn deinit(self: *Authorization) void {
