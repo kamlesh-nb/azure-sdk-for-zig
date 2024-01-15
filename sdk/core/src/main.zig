@@ -18,7 +18,6 @@ pub fn main() !void {
     // const host =  "jsonplaceholder.typicode.com";
 
     const port: u16 = 443;
-
     var cli = Client{ .allocator = allocator, .hostname = host, .port = port, .protocol = .tls };
     defer cli.deinit();
     try cli.connect();
@@ -28,4 +27,5 @@ pub fn main() !void {
     const len = try cli.reader().read(buffer[0..1024]);
 
     std.debug.print("\nResponse: \n{s}\n", .{buffer[0..len]});
+    // std.debug.print("\nName: {s}, Version: {s}\n", .{build.name, build.version });
 }

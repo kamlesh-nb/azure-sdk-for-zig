@@ -20,7 +20,7 @@ pub fn executeRequest(self: *HttpClient, allocator: std.mem.Allocator, request: 
 
     var sender = request.sender();
     const len = try sender.send(client.writer());
-    std.debug.print("Bytes written: {d} \n", .{len});
+    std.log.info("Bytes written: {d} \n", .{len});
 
     var res = try Response.init(allocator);
     defer res.deinit();

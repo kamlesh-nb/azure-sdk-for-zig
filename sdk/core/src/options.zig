@@ -2,31 +2,44 @@ const std = @import("std");
 const time = std.time;
 const Response = @import("http").Response;
 const Policy = @import("policies.zig");
+const HttpClient = @import("http_client.zig");
+const CustomHttpClient = @import("custom_client.zig");
+
+const policies = std.SinglyLinkedList(Policy.Policy);
 
 pub const ClientOptions = struct {
-    /// Policies called per call.
-    per_call_policies: []Policy.Policy,
-    /// Policies called per retry.
-    per_retry_policies: []Policy.Policy,
-    /// Retry options.
+    per_call_policies: policies,
+    per_retry_policies: policies,
     retry: RetryOptions,
-    /// Telemetry options.
     telemetry: TelemetryOptions,
-    /// Transport options.
     transport: TransportOptions,
-    /// Transport options.
-    timeout: Policy.TimeoutPolicy,
+
+    pub fn new(appId: []const u8) ClientOptions {
+        return ClientOptions{
+
+            .per_call_policies = .{},
+            .per_retry_policies = .{},
+
+            .retry = RetryOptions{ .maxRetries = 3, .statusCodes = []u16{ 408, 429, 500, 502, 503, 504 }, .shouldRetry = true },
+
+            .telemetry = TelemetryOptions{
+                .applicationID = appId,
+                .disabled = false,
+            },
+
+            .transport = TransportOptions{
+                .timeout = 60_000,
+                .httpClient = HttpClient{},
+            },
+
+        };
+    }
 };
-
-
 
 pub const RetryOptions = struct {
     maxRetries: i32,
-    tryTimeout: time.epoch,
-    retryDelay: time.epoch,
-    maxRetryDelay: time.Duration,
     statusCodes: []u16,
-    shouldRetry: fn (*Response, anytype) bool,
+    shouldRetry: bool,
 };
 
 pub const TelemetryOptions = struct {
@@ -41,7 +54,7 @@ pub const TokenRequestOptions = struct {
     tenantID: []const u8,
 };
 
-const TransportOptions = union(enum) {
-    HttpClient,
-    CustomHttpClient,
+pub const TransportOptions = struct {
+    timeout: u64,
+    httpClient: HttpClient,
 };

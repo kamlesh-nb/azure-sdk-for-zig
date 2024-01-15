@@ -39,6 +39,11 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     }).module("http"));
 
+    lib.root_module.addImport("azcore", b.dependency("azcore", .{
+        .target = target,
+        .optimize = optimize,
+    }).module("azcore"));
+
     // This declares intent for the library to be installed into the standard
     // location when the user invokes the "install" step (the default step when
     // running `zig build`).
@@ -65,6 +70,11 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = optimize,
     }).module("http"));
+
+    exe.root_module.addImport("azcore", b.dependency("azcore", .{
+        .target = target,
+        .optimize = optimize,
+    }).module("azcore"));
 
     // This declares intent for the executable to be installed into the
     // standard location when the user invokes the "install" step (the default

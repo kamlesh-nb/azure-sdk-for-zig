@@ -45,27 +45,28 @@ pub fn getTimeStamp(self: *Authorization) !void {
 pub fn genAuthSig(self: *Authorization, verb: Method, resourceType: ResourceType, resourceLink: []const u8, key: []const u8) !void {
     const keyType = "master";
     const tokenVersion = "1.0";
-    try self.getTimeStamp();
-    var dbuf: [128]u8 = undefined;
-    const requestDate = std.ascii.lowerString(&dbuf, self.timeStamp);
 
-    var mbuf: [8]u8 = undefined;
-    const lowerMethod = std.ascii.lowerString(&mbuf, verb.toString());
+    try self.getTimeStamp();
+
+    var dateBuf: [128]u8 = undefined;
+    const requestDate = std.ascii.lowerString(&dateBuf, self.timeStamp);
+
+    var methodBuf: [8]u8 = undefined;
+    const lowerMethod = std.ascii.lowerString(&methodBuf, verb.toString());
 
     _ = try self.payload.write("{s}\n{s}\n{s}\n{s}\n\n", .{ lowerMethod, resourceType.toString(), resourceLink, requestDate });
 
-    var kbuf: [64]u8 = undefined;
-    try std.base64.standard.Decoder.decode(&kbuf, key);
+    var keyBuf: [64]u8 = undefined;
+    try std.base64.standard.Decoder.decode(&keyBuf, key);
     var hmacPayload: [cryptoHmac.mac_length]u8 = undefined;
-    cryptoHmac.create(hmacPayload[0..], try self.payload.getWritten(), &kbuf);
-    var buf: [128]u8 = undefined;
-    const signature = std.base64.standard.Encoder.encode(&buf, &hmacPayload);
+    cryptoHmac.create(hmacPayload[0..], try self.payload.getWritten(), &keyBuf);
+    var sigBuf: [128]u8 = undefined;
+    const signature = std.base64.standard.Encoder.encode(&sigBuf, &hmacPayload);
 
     _ = try self.authSig.write("type={s}&ver={s}&sig={s}", .{ keyType, tokenVersion, signature });
-    // std.debug.print("{s}\n", .{try self.authSig.getWritten()});
 
     const authEscaped = try Uri.escapeString(self.allocator, try self.authSig.getWritten());
-    // std.debug.print("{s}\n", .{authEscaped});
+
     _ = try self.auth.write("{s}", .{authEscaped});
 
     self.allocator.free(authEscaped);
