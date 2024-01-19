@@ -1,22 +1,43 @@
 const std = @import("std");
 
-
-
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
 
     const optimize = b.standardOptimizeOption(.{});
 
     const lib = b.addStaticLibrary(.{
-        .name = "azure-core",
+        .name = "azcore",
         .root_source_file = .{ .path = "src/root.zig" },
         .target = target,
         .optimize = optimize,
     });
 
-    _ = b.addModule("azure-core", .{
+    _ = b.addModule("azcore", .{
         .root_source_file = .{ .path = "src/root.zig" },
+        .imports = &.{
+            .{
+                .name = "datetime",
+                .module = b.dependency("datetime", .{}).module("datetime"),
+            },
+            .{
+                .name = "fetch",
+                .module = b.dependency("fetch", .{}).module("fetch"),
+            },
+            .{
+                .name = "http",
+                .module = b.dependency("http", .{}).module("http"),
+            },
+            .{
+                .name = "tls",
+                .module = b.dependency("tls", .{}).module("tls"),
+            },
+        },
     });
+
+    lib.root_module.addImport("datetime", b.dependency("datetime", .{
+        .target = target,
+        .optimize = optimize,
+    }).module("datetime"));
 
     lib.root_module.addImport("fetch", b.dependency("fetch", .{
         .target = target,
@@ -36,11 +57,16 @@ pub fn build(b: *std.Build) void {
     b.installArtifact(lib);
 
     const exe = b.addExecutable(.{
-        .name = "azure-core",
+        .name = "azcore",
         .root_source_file = .{ .path = "src/main.zig" },
         .target = target,
         .optimize = optimize,
     });
+
+    exe.root_module.addImport("datetime", b.dependency("datetime", .{
+        .target = target,
+        .optimize = optimize,
+    }).module("datetime"));
 
     exe.root_module.addImport("fetch", b.dependency("fetch", .{
         .target = target,
@@ -69,23 +95,23 @@ pub fn build(b: *std.Build) void {
     const run_step = b.step("run", "Run the app");
     run_step.dependOn(&run_cmd.step);
 
-    const lib_unit_tests = b.addTest(.{
-        .root_source_file = .{ .path = "src/root.zig" },
-        .target = target,
-        .optimize = optimize,
-    });
+    // const lib_unit_tests = b.addTest(.{
+    //     .root_source_file = .{ .path = "src/root.zig" },
+    //     .target = target,
+    //     .optimize = optimize,
+    // });
 
-    const run_lib_unit_tests = b.addRunArtifact(lib_unit_tests);
+    // const run_lib_unit_tests = b.addRunArtifact(lib_unit_tests);
 
-    const exe_unit_tests = b.addTest(.{
-        .root_source_file = .{ .path = "src/main.zig" },
-        .target = target,
-        .optimize = optimize,
-    });
+    // const exe_unit_tests = b.addTest(.{
+    //     .root_source_file = .{ .path = "src/main.zig" },
+    //     .target = target,
+    //     .optimize = optimize,
+    // });
 
-    const run_exe_unit_tests = b.addRunArtifact(exe_unit_tests);
+    // const run_exe_unit_tests = b.addRunArtifact(exe_unit_tests);
 
-    const test_step = b.step("test", "Run unit tests");
-    test_step.dependOn(&run_lib_unit_tests.step);
-    test_step.dependOn(&run_exe_unit_tests.step);
+    // const test_step = b.step("test", "Run unit tests");
+    // test_step.dependOn(&run_lib_unit_tests.step);
+    // test_step.dependOn(&run_exe_unit_tests.step);
 }

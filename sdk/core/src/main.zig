@@ -4,28 +4,80 @@ const http = @import("http");
 const Request = http.Request;
 const Response = http.Response;
 const Method = http.Method;
+const Version = http.Version;
+const TelemetryPolicy = @import("policies/telemetry.zig");
+const RetryPolicy = @import("policies/retry.zig");
+const TransportPolicy = @import("policies/transport.zig");
+
+const ClientOptions = @import("options/client_options.zig");
+const Policy = @import("policies/policy.zig").Policy;
+const Pipeline = @import("pipeline.zig");
+
+
+
+pub const TryPolicy = struct {
+    value: []const u8,
+
+    pub fn new(value: []const u8) TryPolicy {
+        return TryPolicy{ .value = value };
+    }
+
+    pub fn send(ptr: *anyopaque, arena: *std.heap.ArenaAllocator, request: *Request, next: []const Policy) anyerror!Response {
+        const self: *TryPolicy = @ptrCast(@alignCast(ptr));
+        request.parts.headers.add("user-agent-try", self.value);
+        return next[0].send(arena, request, next[1..]);
+    }
+
+    pub fn policy(self: *TryPolicy) Policy {
+        return Policy{
+            .ptr = self,
+            .value = self.value,
+            .sendFn = send,
+        };
+    }
+};
+
 
 
 pub fn main() !void {
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer {
-        const deinit_status = gpa.deinit();
-        if (deinit_status == .leak) std.testing.expect(false) catch @panic("TEST FAIL");
-    }
-    const allocator = gpa.allocator();
+    var Arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    defer Arena.deinit();
+    const allocator = Arena.allocator();
 
-    const host = "flokidb.documents.azure.com";
-    // const host =  "jsonplaceholder.typicode.com";
+    const options = try ClientOptions.new(allocator, "azure.core.zig.v0.0.1");
+ 
+    var tr = TryPolicy.new("try");
 
-    const port: u16 = 443;
-    var cli = Client{ .allocator = allocator, .hostname = host, .port = port, .protocol = .tls };
-    defer cli.deinit();
-    try cli.connect();
-    _ = try cli.writer().write("buffer: []const u8");
+    var pipeline = try Pipeline.init(allocator);
+    defer pipeline.deinit();
 
-    var buffer: [1024]u8 = undefined;
-    const len = try cli.reader().read(buffer[0..1024]);
+    try pipeline.policies.add(tr.policy());
+    var tep = TelemetryPolicy.new("azure.core.zig.v0.0.1");
+    try pipeline.policies.add(tep.policy());
+    try pipeline.addDefauls(options);
 
-    std.debug.print("\nResponse: \n{s}\n", .{buffer[0..len]});
-    // std.debug.print("\nName: {s}, Version: {s}\n", .{build.name, build.version });
+    const uri = std.Uri{
+        .scheme = "https",
+        .host = "jsonplaceholder.typicode.com",
+        .port = 443,
+        .fragment = null,
+        .path = "/todos",
+        .password = null,
+        .query = null,
+        .user = null,
+    };
+    var request = try Request.new(allocator, uri, .get, .Http11);
+    defer request.deinit();
+
+    request.parts.headers.add("Accept", "application/json");
+    request.parts.headers.add("Host", "jsonplaceholder.typicode.com");
+    request.parts.headers.add("Accept-Language", "en-US,en;q=0.9,nl;q=0.8");
+    request.parts.headers.add("Upgrade-Insecure-Requests", "1");
+
+    var response = try pipeline.send(
+        &Arena,
+        &request,
+    );
+    defer response.deinit();
+    std.debug.print("{s}\n", .{response.body.buffer.str()});
 }
