@@ -6,31 +6,14 @@ const Method = http.Method;
 const Request = http.Request;
 const Response = http.Response;
 
+const CosmosClient = @import("cosmos.zig");
+
 pub fn main() !void {
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer {
-        const deinit_status = gpa.deinit();
-        if (deinit_status == .leak) std.testing.expect(false) catch @panic("TEST FAIL");
-    }
-    const allocator = gpa.allocator();
-
-    var authorization = try Authorization.init(allocator);
-    defer authorization.deinit();
-
-    const chabi = "==";
-
-    try authorization.genAuthSig(Method.get, E.ResourceType.dbs, "dbs/floki", chabi);
-    const auth = try authorization.auth.getWritten();
-    _ = auth;
-    std.debug.print("\nSize: {d}\nSig: {s}\n", .{ authorization.auth.size, try authorization.auth.getWritten() });
-}
-
-test "auth" {
-    var auth = try Authorization.init(std.testing.allocator);
-    defer auth.deinit();
-
-    const chabi = "==";
-    try auth.genAuthSig(Method.get, E.ResourceType.dbs, "dbs/floki", chabi);
-
-    std.debug.print("Sig: \n{s}", .{auth.auth});
+    var Arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    defer Arena.deinit();
+    const allocator = Arena.allocator();
+    _ = allocator;
+    var client = try CosmosClient.init(&Arena, "flokidb", "");
+    const db = client.getDatabase("floki");
+    _ = db;
 }

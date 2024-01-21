@@ -13,42 +13,40 @@ const Response = http.Response;
 const Method = http.Method;
 const Version = http.Version;
 
-const Cosmos = @This();
-
+const CosmosClient = @This();
 
 allocator: std.mem.Allocator = undefined,
 pipeline: Pipleline = undefined,
-accoount: []const u8,
+account: []const u8,
 key: []const u8,
-auth_token: []const u8 = undefined,   
+auth_token: []const u8 = undefined,
 timestamp: []const u8 = undefined,
 
-pub fn init(arena: *std.heap.ArenaAllocator, account: []const u8, key: []const u8) Cosmos {
+pub fn init(arena: *std.heap.ArenaAllocator, account: []const u8, key: []const u8) !CosmosClient {
     const allocator = arena.allocator();
     return .{
         .allocator = allocator,
-        .pipeline = Pipleline.init(allocator),
+        .pipeline = try Pipleline.init(allocator),
         .account = account,
         .key = key,
     };
 }
 
-pub fn authToken(client: *Cosmos, verb: Method, resourceType: E.ResourceType, resourceLink: []const u8)  !void {
+pub fn authToken(client: *CosmosClient, verb: Method, resourceType: E.ResourceType, resourceLink: []const u8) !void {
     const authorization = try Authorization.init(client.allocator);
     defer Authorization.deinit();
 
     try authorization.genAuthSig(verb, resourceType, resourceLink, client.key);
     client.timestamp = authorization.timeStamp;
     client.auth_token = try authorization.auth.getWritten();
-    
 }
 
-pub fn database(client: *Cosmos, id: []const u8) !Database {
-    return try Database.init(client.allocator, client, id);
+pub fn getDatabase(client: *CosmosClient, id: []const u8) Database {
+    return Database.init(id, client);
 }
 
-pub fn request(client: *Cosmos, resource: []const u8, verb: Method, version: Version) !Request {
-    var location: [256] u8 = undefined;
+pub fn request(client: *CosmosClient, resource: []const u8, verb: Method, version: Version) !Request {
+    var location: [256]u8 = undefined;
 
     const uri = std.Uri{
         .scheme = "https",
@@ -60,11 +58,10 @@ pub fn request(client: *Cosmos, resource: []const u8, verb: Method, version: Ver
         .query = null,
         .user = null,
     };
-    
-   return try Request.new(client.allocator, uri, verb, version);
-    
+
+    return try Request.new(client.allocator, uri, verb, version);
 }
 
-pub fn deinit(client: *Cosmos) void {
+pub fn deinit(client: *CosmosClient) void {
     client.pipeline.deinit();
 }

@@ -16,7 +16,7 @@ pub fn build(b: *std.Build) void {
     const optimize = b.standardOptimizeOption(.{});
 
     const lib = b.addStaticLibrary(.{
-        .name = "azure-cosmosdb",
+        .name = "azcosmosdb",
         // In this case the main source file is merely a path, however, in more
         // complicated build scripts, this could be a generated file.
         .root_source_file = .{ .path = "src/root.zig" },
@@ -34,10 +34,10 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     }).module("datetime"));
 
-    lib.root_module.addImport("http", b.dependency("http", .{
-        .target = target,
-        .optimize = optimize,
-    }).module("http"));
+    // lib.root_module.addImport("http", b.dependency("http", .{
+    //     .target = target,
+    //     .optimize = optimize,
+    // }).module("http"));
 
     lib.root_module.addImport("azcore", b.dependency("azcore", .{
         .target = target,
@@ -50,7 +50,7 @@ pub fn build(b: *std.Build) void {
     b.installArtifact(lib);
 
     const exe = b.addExecutable(.{
-        .name = "azure-cosmosdb",
+        .name = "azcosmosdb",
         .root_source_file = .{ .path = "src/main.zig" },
         .target = target,
         .optimize = optimize,
@@ -66,10 +66,10 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     }).module("datetime"));
 
-    exe.root_module.addImport("http", b.dependency("http", .{
-        .target = target,
-        .optimize = optimize,
-    }).module("http"));
+    // exe.root_module.addImport("http", b.dependency("http", .{
+    //     .target = target,
+    //     .optimize = optimize,
+    // }).module("http"));
 
     exe.root_module.addImport("azcore", b.dependency("azcore", .{
         .target = target,
