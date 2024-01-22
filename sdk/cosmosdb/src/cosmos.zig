@@ -13,7 +13,7 @@ const E = @import("enums.zig");
 const ResourceType = E.ResourceType;
 const Authorization = @import("authorization.zig");
 const Database = @import("database.zig");
-// const http = @import("http");
+const Buffer = @import("buffer");
 const Request = core.Request;
 const Response = core.Response;
 const Method = core.Method;
@@ -26,7 +26,6 @@ pub const Databases = struct {
 };
 
 const CosmosClient = @This();
-
 
 arena: *std.heap.ArenaAllocator = undefined,
 allocator: std.mem.Allocator = undefined,
@@ -73,7 +72,7 @@ pub fn send(client: *CosmosClient, resourceType: ResourceType, request: *Request
     var authp = AuthorizationPolicy.new(try client.authorization.auth.getWritten());
     try client.pipeline.policies.add(authp.policy());
 
-    return try client.pipeline.send(client.arena , request);
+    return try client.pipeline.send(client.arena, request);
 }
 
 fn authToken(client: *CosmosClient, verb: Method, resourceType: ResourceType, resourceLink: []const u8) !void {
@@ -83,7 +82,7 @@ fn authToken(client: *CosmosClient, verb: Method, resourceType: ResourceType, re
 pub fn getDatabase(client: *CosmosClient, id: []const u8) !void {
     var resource: [2048]u8 = undefined;
     var request = try createRequest(client, try std.fmt.bufPrint(&resource, "/dbs/{s}", .{id}), Method.get, Version.Http11);
-    const response = try client.send (ResourceType.dbs, &request);
+    const response = try client.send(ResourceType.dbs, &request);
     std.debug.print("{any}\n", .{response.body});
     // const x =  try response.body.get(client.allocator, Database);
 }
@@ -98,13 +97,16 @@ pub fn listDatabases(client: *CosmosClient) !Databases {
 }
 
 pub fn createRequest(client: *CosmosClient, path: []const u8, verb: Method, version: Version) !Request {
-    var location: [256]u8 = undefined;
+    var buf = try Buffer.init(client.allocator);
+    defer buf.deinit();
+
+    _ = try buf.write("{s}.documents.azure.com", .{client.account});
     const uri = std.Uri{
         .scheme = "https",
-        .host = try std.fmt.bufPrint(&location, "{s}.documents.azure.com", .{client.account}),
+        .host = try buf.getWritten(),
         .port = 443,
         .fragment = null,
-        .path =path,
+        .path = path,
         .password = null,
         .query = null,
         .user = null,
