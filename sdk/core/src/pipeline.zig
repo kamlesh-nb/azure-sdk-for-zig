@@ -52,7 +52,7 @@ pub fn init(allocator: std.mem.Allocator) !Pipeline {
     };
 }
 
-pub fn addDefauls(self: *Pipeline, options: ClientOptions) !void {
+pub fn addDefaults(self: *Pipeline, options: ClientOptions) !void {
     var rp = RetryPolicy.new(options.retry);
     var tp = TransportPolicy.new(options.transport);
     try self.policies.add(rp.policy());

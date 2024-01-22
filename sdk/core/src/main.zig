@@ -54,14 +54,14 @@ pub fn main() !void {
     try pipeline.policies.add(tr.policy());
     var tep = TelemetryPolicy.new("azure.core.zig.v0.0.1");
     try pipeline.policies.add(tep.policy());
-    try pipeline.addDefauls(options);
+    try pipeline.addDefaults(options);
 
     const uri = std.Uri{
         .scheme = "https",
-        .host = "jsonplaceholder.typicode.com",
+        .host = "flokidb.documents.azure.com",
         .port = 443,
         .fragment = null,
-        .path = "/todos",
+        .path = "/dbs",
         .password = null,
         .query = null,
         .user = null,
@@ -70,7 +70,7 @@ pub fn main() !void {
     defer request.deinit();
 
     request.parts.headers.add("Accept", "application/json");
-    request.parts.headers.add("Host", "jsonplaceholder.typicode.com");
+    request.parts.headers.add("Host", "flokidb.documents.azure.com");
     request.parts.headers.add("Accept-Language", "en-US,en;q=0.9,nl;q=0.8");
     request.parts.headers.add("Upgrade-Insecure-Requests", "1");
 

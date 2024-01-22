@@ -9,7 +9,6 @@ const TelemetryOptions = @import("telemetry_options.zig");
 const TransportOptions = @import("transport_options.zig");
 const HttpClient = @import("../http_client.zig");
 
-
 const ClientOptions = @This();
 
 per_call_policies: []const Policy = undefined,
@@ -18,6 +17,7 @@ retry: RetryOptions,
 telemetry: TelemetryOptions,
 transport: TransportOptions,
 allocator: std.mem.Allocator,
+
 pub fn new(allocator: std.mem.Allocator, appId: []const u8) !ClientOptions {
     return ClientOptions{
         .allocator = allocator,
@@ -31,7 +31,7 @@ pub fn new(allocator: std.mem.Allocator, appId: []const u8) !ClientOptions {
 
         .transport = TransportOptions{
             .timeout = 60,
-            .httpClient = HttpClient{ .allocator = allocator },
+            .httpClient = HttpClient{},
         },
     };
 }
