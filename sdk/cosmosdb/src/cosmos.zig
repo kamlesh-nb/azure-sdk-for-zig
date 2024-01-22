@@ -56,12 +56,13 @@ pub fn send(client: *CosmosClient, resourceType: ResourceType, request: *Request
     }
 
     client.pipeline = try Pipleline.init(client.allocator);
-    try authToken(client, request.*.parts.method, resourceType, request.*.parts.uri.path);
-    std.debug.print("\npolicy: {s}", .{try client.authorization.auth.getWritten()});
+
+    try authToken(client, request.*.parts.method, resourceType, request.*.parts.uri.path[1..]);
+    
     var rdp = RequestDatePolicy.new(client.authorization.timeStamp);
     try client.pipeline.?.policies.add(rdp.policy());
 
-    var authp = AuthorizationPolicy.new(try client.authorization.auth.getWritten());
+    var authp = AuthorizationPolicy.new(client.authorization.auth.getWritten());
     try client.pipeline.?.policies.add(authp.policy());
 
     var tep = TelemetryPolicy.new("azure.core.zig.v0.0.1");
@@ -79,13 +80,15 @@ fn authToken(client: *CosmosClient, verb: Method, resourceType: ResourceType, re
     try client.authorization.genAuthSig(verb, resourceType, resourceLink, client.key);
 }
 
-pub fn getDatabase(client: *CosmosClient, id: []const u8) !void {
+pub fn getDatabase(client: *CosmosClient, id: []const u8) ![]const u8 {
     var resource: [2048]u8 = undefined;
     const r = try std.fmt.bufPrint(&resource, "/dbs/{s}", .{id});
     var request = try createRequest(client, r[0..r.len], Method.get, Version.Http11);
-    const response = try client.send(ResourceType.dbs, &request);
-    std.debug.print("{s}\n", .{response.body.buffer.str()});
-    // const x =  try response.body.get(client.allocator, Database);
+    var response = try client.send(ResourceType.dbs, &request);
+    const body = response.body.buffer.str();
+    
+    client.pipeline.?.deinit();
+    return body;
 }
 
 pub fn createDatabase(client: *CosmosClient, id: []const u8) !Database {
@@ -98,6 +101,7 @@ pub fn listDatabases(client: *CosmosClient) !Databases {
 }
 
 pub fn createRequest(client: *CosmosClient, path: []const u8, verb: Method, version: Version) !Request {
+    
     const uri = std.Uri{
         .scheme = "https",
         .host = client.account,
@@ -121,10 +125,3 @@ pub fn deinit(client: *CosmosClient) void {
     client.authorization.deinit();
     client.pipeline.deinit();
 }
-
-// type%3Dmaster%26ver%3D1.0%26sig%3DPsEGNVboYVECaZT27z7WzwmMUy7aFmXHA6nvwb9BOTU%3D
-// type%3Dmaster%26ver%3D1.0%26sig%3DPsEGNVboYVECaZT27z7WzwmMUy7aFmXHA6nvwb9BOTU%3D
-// type%3Dmaster%26ver%3D1.0%26sig%3DPsEGNVboYVECaZT27z7WzwmMUy7aFmXHA6nvwb9BOTU%3D
-
-//type%3Dmaster%26ver%3D1.0%26sig%3DScp2zorxBOmltliLmMGx7S3W680zBGMzR%2FlrmeUAavM%3D
-//type%3Dmaster%26ver%3D1.0%26sig%3DWMeh1KD2nmSswvf9boI6rY8IQwqXTP51Fqw6B%2BFZoz8%3D
