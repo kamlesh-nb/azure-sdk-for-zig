@@ -47,26 +47,28 @@ pub fn genAuthSig(self: *Authorization, verb: Method, resourceType: ResourceType
     const tokenVersion = "1.0";
 
     try self.getTimeStamp();
-
-    var dateBuf: [128]u8 = undefined;
-    const requestDate = std.ascii.lowerString(&dateBuf, self.timeStamp);
+        const rd = "Mon, 22 Jan 2024 15:11:31 GMT";
+    var dateBuf: [32]u8 = undefined;
+    // const requestDate = std.ascii.lowerString(&dateBuf, self.timeStamp);
+    const requestDate = std.ascii.lowerString(&dateBuf, rd);
 
     var methodBuf: [8]u8 = undefined;
     const lowerMethod = std.ascii.lowerString(&methodBuf, verb.toString());
 
     _ = try self.payload.write("{s}\n{s}\n{s}\n{s}\n\n", .{ lowerMethod, resourceType.toString(), resourceLink, requestDate });
+    std.debug.print("\nPayload: \n{s}", .{try self.payload.getWritten()});
 
     var keyBuf: [64]u8 = undefined;
     try std.base64.standard.Decoder.decode(&keyBuf, key);
     var hmacPayload: [cryptoHmac.mac_length]u8 = undefined;
     cryptoHmac.create(hmacPayload[0..], try self.payload.getWritten(), &keyBuf);
-    var sigBuf: [128]u8 = undefined;
+    var sigBuf: [64]u8 = undefined;
     const signature = std.base64.standard.Encoder.encode(&sigBuf, &hmacPayload);
 
     _ = try self.authSig.write("type={s}&ver={s}&sig={s}", .{ keyType, tokenVersion, signature });
 
     const authEscaped = try Uri.escapeString(self.allocator, try self.authSig.getWritten());
-
+    std.debug.print("\nescaped: {s}", .{authEscaped});
     _ = try self.auth.write("{s}", .{authEscaped});
 
     self.allocator.free(authEscaped);

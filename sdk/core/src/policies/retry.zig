@@ -28,7 +28,7 @@ pub fn send(ptr: *anyopaque, arena: *std.heap.ArenaAllocator, request: *Request,
             if (retries > self.options.maxRetries) {
                 return response;
             }
-            if (response.parts.status == Status.bad_request) {
+            if (response.parts.status == Status.bad_request or response.parts.status == Status.unauthorized) {
                 return response;
             } else if (response.parts.status == Status.too_many_requests) {
                 // const retry_after =  response.parts.headers.get("Retry-After"); / /TODO: parse this
