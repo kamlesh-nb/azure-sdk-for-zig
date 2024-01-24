@@ -13,7 +13,7 @@ const E = @import("enums.zig");
 const ResourceType = E.ResourceType;
 const Authorization = @import("authorization.zig");
 const Database = @import("database.zig");
-const Buffer = @import("buffer");
+const Buffer = core.Buffer;
 const Request = core.Request;
 const Response = core.Response;
 const Method = core.Method;
@@ -43,26 +43,30 @@ pub fn init(arena: *std.heap.ArenaAllocator, account: []const u8, key: []const u
     return CosmosClient{
         .arena = arena,
         .allocator = allocator,
-        .authorization = try Authorization.init(allocator),
         .clientOptions = try ClientOptions.new(allocator, "azure.cosmosdb.zig-v.0.01"),
         .account = account,
         .key = key,
     };
 }
 
-pub fn send(client: *CosmosClient, resourceType: ResourceType, request: *Request) !Response {
-    if (client.pipeline) |_| {
+pub fn reinitPipeline(client: *CosmosClient) !void {
+     if (client.pipeline) |_| {
         client.pipeline.?.deinit();
     }
 
     client.pipeline = try Pipleline.init(client.allocator);
+}
 
-    try authToken(client, request.*.parts.method, resourceType, request.*.parts.uri.path[1..]);
-    
+pub fn send(client: *CosmosClient, resourceType: ResourceType, resourceLink: []const u8 ,request: *Request) !Response {
+  
+    client.authorization  = try Authorization.init(client.allocator);
+    defer client.authorization.deinit();
+    try authToken(client, request.*.parts.method, resourceType, resourceLink);
+
     var rdp = RequestDatePolicy.new(client.authorization.timeStamp);
     try client.pipeline.?.policies.add(rdp.policy());
 
-    var authp = AuthorizationPolicy.new(client.authorization.auth.getWritten());
+    var authp = AuthorizationPolicy.new(client.authorization.auth.str());
     try client.pipeline.?.policies.add(authp.policy());
 
     var tep = TelemetryPolicy.new("azure.core.zig.v0.0.1");
@@ -76,19 +80,20 @@ pub fn send(client: *CosmosClient, resourceType: ResourceType, request: *Request
     return try client.pipeline.?.send(client.arena, request);
 }
 
-fn authToken(client: *CosmosClient, verb: Method, resourceType: ResourceType, resourceLink: []const u8) !void {
+fn authToken(client: *CosmosClient, verb: Method, resourceType: ResourceType, resourceLink: []const u8) !void{
     try client.authorization.genAuthSig(verb, resourceType, resourceLink, client.key);
 }
 
-pub fn getDatabase(client: *CosmosClient, id: []const u8) ![]const u8 {
+pub fn getDatabase(client: *CosmosClient, id: []const u8) !Database {
     var resource: [2048]u8 = undefined;
     const r = try std.fmt.bufPrint(&resource, "/dbs/{s}", .{id});
+    try client.reinitPipeline();
     var request = try createRequest(client, r[0..r.len], Method.get, Version.Http11);
-    var response = try client.send(ResourceType.dbs, &request);
-    const body = response.body.buffer.str();
-    
+    var response = try client.send(ResourceType.dbs, r[1..r.len],&request);
+
     client.pipeline.?.deinit();
-    return body;
+
+    return response.body.get(client.allocator, Database);
 }
 
 pub fn createDatabase(client: *CosmosClient, id: []const u8) !Database {
@@ -101,7 +106,6 @@ pub fn listDatabases(client: *CosmosClient) !Databases {
 }
 
 pub fn createRequest(client: *CosmosClient, path: []const u8, verb: Method, version: Version) !Request {
-    
     const uri = std.Uri{
         .scheme = "https",
         .host = client.account,

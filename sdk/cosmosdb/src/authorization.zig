@@ -1,9 +1,9 @@
 const std = @import("std");
-const Buffer = @import("buffer");
 const Enums = @import("enums.zig");
 const date = @import("datetime").datetime;
 const tz = @import("datetime").timezones;
 const core = @import("azcore");
+const Buffer = core.Buffer;
 const Method = core.Method;
 
 const ResourceType = Enums.ResourceType;
@@ -30,9 +30,9 @@ timeStamp: []const u8 = undefined,
 pub fn init(allocator: Allocator) !Authorization {
     return Authorization{
         .allocator = allocator,
-        .payload = try Buffer.init(allocator),
-        .authSig = try Buffer.init(allocator),
-        .auth = try Buffer.init(allocator),
+        .payload = Buffer.init(allocator),
+        .authSig = Buffer.init(allocator),
+        .auth = Buffer.init(allocator),
     };
 }
 
@@ -54,19 +54,19 @@ pub fn genAuthSig(self: *Authorization, verb: Method, resourceType: ResourceType
     var methodBuf: [8]u8 = undefined;
     const lowerMethod = std.ascii.lowerString(&methodBuf, verb.toString());
 
-    _ = try self.payload.write("{s}\n{s}\n{s}\n{s}\n\n", .{ lowerMethod, resourceType.toString(), resourceLink, requestDate });
+    _ = try self.payload.writer().print("{s}\n{s}\n{s}\n{s}\n\n", .{ lowerMethod, resourceType.toString(), resourceLink, requestDate });
 
     var keyBuf: [64]u8 = undefined;
     try std.base64.standard.Decoder.decode(&keyBuf, key);
     var hmacPayload: [cryptoHmac.mac_length]u8 = undefined;
-    cryptoHmac.create(hmacPayload[0..], self.payload.getWritten(), &keyBuf);
+    cryptoHmac.create(hmacPayload[0..], self.payload.str(), &keyBuf);
     var sigBuf: [64]u8 = undefined;
     const signature = std.base64.standard.Encoder.encode(&sigBuf, &hmacPayload);
 
-    _ = try self.authSig.write("type={s}&ver={s}&sig={s}", .{ keyType, tokenVersion, signature });
+    _ = try self.authSig.writer().print("type={s}&ver={s}&sig={s}", .{ keyType, tokenVersion, signature });
 
-    const authEscaped = try Uri.escapeString(self.allocator, self.authSig.getWritten());
-    _ = try self.auth.write("{s}", .{authEscaped});
+    const authEscaped = try Uri.escapeString(self.allocator,  self.authSig.str());
+    _ = try self.auth.writer().print("{s}", .{authEscaped});
 
     self.allocator.free(authEscaped);
 }

@@ -1,19 +1,11 @@
 .{
-    .name = "azcosmosdb",
+    .name = "azcosmos",
     .version = "0.0.1",
     .dependencies = .{
-        .buffer = .{
-            .url = "https://github.com/kamlesh-nb/buffer/archive/refs/tags/v0.0.2.tar.gz",
-            .hash = "12200160609cd7e247428d2a5d9c73af5592eb128f0c2f8c833a9d1d82efa54ec3df",
-        },
         .datetime = .{
             .url = "https://github.com/kamlesh-nb/datetime/archive/refs/tags/v0.0.1.tar.gz",
             .hash = "1220348dc86b573420dfa6304f6f2d7159766003bb43f30739f8ba210ac75344b52f",
         },
-        // .http = .{
-        //     .url = "https://github.com/kamlesh-nb/http/archive/refs/tags/v0.0.1.tar.gz",
-        //     .hash = "1220351df79e05bd468df39f7fd7c3035e3e82ebe47e34b8553f80fcfc64cd04e79d",
-        // },
         .azcore = .{
             .path = "../core",
         },

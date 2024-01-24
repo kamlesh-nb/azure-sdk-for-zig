@@ -18,7 +18,7 @@ pub fn new(appId: []const u8) TelemetryPolicy {
 
 pub fn send(ptr: *anyopaque, arena: *std.heap.ArenaAllocator, request: *Request, next: []const Policy) anyerror!Response {
     const self: *TelemetryPolicy = @ptrCast(@alignCast(ptr));
-    request.parts.headers.add("user-agent", self.value);
+    request.parts.headers.add("User-Agent", self.value);
     return next[0].send(arena, request, next[1..]);
 }
 

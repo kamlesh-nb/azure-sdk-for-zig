@@ -24,10 +24,10 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
 
-    lib.root_module.addImport("buffer", b.dependency("buffer", .{
-        .target = target,
-        .optimize = optimize,
-    }).module("buffer"));
+    // lib.root_module.addImport("buffer", b.dependency("buffer", .{
+    //     .target = target,
+    //     .optimize = optimize,
+    // }).module("buffer"));
 
     lib.root_module.addImport("datetime", b.dependency("datetime", .{
         .target = target,
@@ -56,10 +56,10 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
 
-    exe.root_module.addImport("buffer", b.dependency("buffer", .{
-        .target = target,
-        .optimize = optimize,
-    }).module("buffer"));
+    // exe.root_module.addImport("buffer", b.dependency("buffer", .{
+    //     .target = target,
+    //     .optimize = optimize,
+    // }).module("buffer"));
 
     exe.root_module.addImport("datetime", b.dependency("datetime", .{
         .target = target,

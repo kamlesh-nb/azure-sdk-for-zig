@@ -24,7 +24,10 @@ pub fn send(ptr: *anyopaque, arena: *std.heap.ArenaAllocator, request: *Request,
     var retries: u32 = 0;
     while (true) {
         const response = try next[0].send(arena, request, next[1..]);
-        if (response.parts.status != Status.ok) {
+        if (response.parts.status == Status.ok or response.parts.status == Status.created) {
+            return response;
+        }
+        else if (response.parts.status != Status.ok or response.parts.status != Status.created) {
             if (retries > self.options.maxRetries) {
                 return response;
             }

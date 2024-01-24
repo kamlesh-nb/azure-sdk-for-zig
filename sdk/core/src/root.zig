@@ -11,3 +11,4 @@ pub const Response = http.Response;
 pub const Method = http.Method;
 pub const Version = http.Version;
 pub const Status = http.Status;
+pub const Buffer = http.Buffer;
