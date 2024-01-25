@@ -35,6 +35,12 @@ pub const SaleOrder = struct {
     _attachments: []const u8 = undefined,
 };
 
+const SaleOrders = struct {
+    _rid: []const u8,
+    Documents: []SaleOrder,
+    _count: u64,
+};
+
 pub fn main() !void {
     var Arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer Arena.deinit();
@@ -47,12 +53,12 @@ pub fn main() !void {
     const key = env.get("COSMOSDB_KEY").?;
     var client = try CosmosClient.init(&Arena, account, key);
     var db = try client.getDatabase("floki");
-    // const cont = try db.createContainer(&client, "SaleOrder", "/id");
+    // const cont = try db.createContainer("SaleOrder", "/id");
 
-    var container = try db.getContainer(&client, "SaleOrder");
+    var container = try db.getContainer("SaleOrder");
 
     const saleOrder = .{
-        .id = "498",
+        .id = "148",
         .PoNumber = "PO123439186470",
         .OrderDate = "2005-09-21T00:00:00Z",
         .ShippedDate = "2005-07-28T00:00:00Z",
@@ -68,6 +74,9 @@ pub fn main() !void {
         },
     };
 
-    const item = try container.createItem(&client, db.id, SaleOrder, saleOrder, saleOrder.id);
-    std.debug.print("\nParsed: {any}\n", .{item});
+    const item = try container.createItem(SaleOrder, saleOrder, saleOrder.id);
+    _ = item;
+
+    const items = try container.readItems(SaleOrders);
+    std.debug.print("\nParsed: {any}\n", .{items});
 }

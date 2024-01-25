@@ -4,9 +4,13 @@ const Database = @import("database.zig");
 const E = @import("enums.zig");
 const ResourceType = E.ResourceType;
 
+const ContainerResponse = @import("resources/container.zig").ContainerResponse;
+
 const PartitionKeyPolicy = @import("policies/partition_key_policy.zig");
 const ThroughputPolicy = @import("policies/throughput_policy.zig");
 const MaxItemPolicy = @import("policies/max_item_policy.zig");
+const CrossPartitionQueryPolicy = @import("policies/cross_partition_query_policy.zig");
+const QueryPolicy = @import("policies/query_policy.zig");
 
 const core = @import("azcore");
 
@@ -15,126 +19,175 @@ const Response = core.Response;
 const Method = core.Method;
 const Version = core.Version;
 
-pub const KeyKind = enum(u8) {
-    Hash,
-    Range,
-    Spatial,
-};
+const Container = @This();
 
-pub const DataType = enum(u8) {
-    String,
-    Number,
-    Point,
-    Polygon,
-    LineString,
-};
+client: *CosmosClient,
+db: *Database,
+container: ContainerResponse,
 
-pub const IndexingMode = enum(u8) {
-    Consistent,
-    Lazy,
-    None,
-};
+pub fn createItem(self: *Container, comptime T: type, payload: anytype, partitionKey: []const u8) !T {
+    var resourceType: [2048]u8 = undefined;
+    const rt = try std.fmt.bufPrint(&resourceType, "/dbs/{s}/colls/{s}/docs", .{ self.db.db.id, self.container.id });
 
-pub const IncludedPathIndex = struct {
-    dataType: []const u8,
-    precision: ?i8,
-    kind: []const u8,
-};
+    var resourceLink: [2048]u8 = undefined;
+    const rl = try std.fmt.bufPrint(&resourceLink, "dbs/{s}/colls/{s}", .{ self.db.db.id, self.container.id });
 
-pub const IncludedPath = struct {
-    path: []const u8,
-};
+    try self.client.reinitPipeline();
 
-pub const ExcludedPath = struct {
-    path: []const u8,
-};
+    var pkp = PartitionKeyPolicy.new(partitionKey);
+    try self.client.pipeline.?.policies.add(pkp.policy());
 
-pub const IndexingPolicy = struct {
-    automatic: bool,
-    indexingMode: []const u8,
-    includedPaths: []IncludedPath,
-    excludedPaths: []ExcludedPath,
-};
+    var request = try self.client.createRequest(rt[0..rt.len], Method.post, Version.Http11);
 
-pub const PartitionKey = struct {
-    paths: [][]const u8,
-    kind: []const u8,
-    version: u8,
-};
+    try request.body.set(payload);
 
-pub const ConflictResolutionPolicy = struct {
-    mode: []const u8,
-    conflictResolutionPath: []const u8,
-    conflictResolutionProcedure: []const u8,
-};
+    var buf: [6]u8 = undefined;
+    const str = try std.fmt.bufPrint(&buf, "{}", .{request.body.buffer.size});
 
-pub const GeospatialConfig = struct {
-    type: []const u8,
-};
+    request.parts.headers.add("Content-Length", str[0..str.len]);
 
-pub const Container = struct {
-    id: []const u8,
-    indexingPolicy: IndexingPolicy,
-    partitionKey: PartitionKey,
-    conflictResolutionPolicy: ConflictResolutionPolicy,
-    geospatialConfig: GeospatialConfig,
-    _rid: []const u8,
-    _ts: u64,
-    _self: []const u8,
-    _etag: []const u8,
-    _docs: []const u8,
-    _sprocs: []const u8,
-    _triggers: []const u8,
-    _udfs: []const u8,
-    _conflicts: []const u8,
+    var response = try self.client.send(ResourceType.docs, rl[0..rl.len], &request);
 
-    pub fn createItem(self: *Container, client: *CosmosClient, db: []const u8,  comptime T: type, payload: anytype, partitionKey: []const u8) !T {
-        var resourceType: [2048]u8 = undefined;
-        const rt = try std.fmt.bufPrint(&resourceType, "/dbs/{s}/colls/{s}/docs", .{ db, self.id });
+    self.client.pipeline.?.deinit();
 
-        var resourceLink: [2048]u8 = undefined;
-        const rl = try std.fmt.bufPrint(&resourceLink, "dbs/{s}/colls/{s}", .{ db, self.id });
+    // std.debug.print("\nResponse: \n{s}\n", .{response.body.buffer.str()});
+    return try response.body.get(self.client.allocator, T);
+}
 
-        try client.reinitPipeline();
+pub fn readItem(self: *Container, comptime T: type, item_id: []const u8, partitionKey: []const u8) !type {
+    var resourceType: [2048]u8 = undefined;
+    const rt = try std.fmt.bufPrint(&resourceType, "/dbs/{s}/colls/{s}/docs/{s}", .{ self.db.db.id, self.container.id, item_id });
 
-        var pkp = PartitionKeyPolicy.new(partitionKey);
-        try client.pipeline.?.policies.add(pkp.policy());
+    var resourceLink: [2048]u8 = undefined;
+    const rl = try std.fmt.bufPrint(&resourceLink, "dbs/{s}/colls/{s}/docs/{s}", .{ self.db.db.id, self.container.id, item_id });
 
-        var request = try client.createRequest(rt[0..rt.len], Method.post, Version.Http11);
+    try self.client.reinitPipeline();
 
-        try request.body.set(payload);
+    var pkp = PartitionKeyPolicy.new(partitionKey);
+    try self.client.pipeline.?.policies.add(pkp.policy());
 
-        var buf: [6]u8 = undefined;
-        const str = try std.fmt.bufPrint(&buf, "{}", .{request.body.buffer.size});
-        
-        request.parts.headers.add("Content-Length", str[0..str.len]);
+    var request = try self.client.createRequest(rt[0..rt.len], Method.get, Version.Http11);
 
-        var response = try client.send(ResourceType.docs, rl[0..rl.len], &request);
+    var buf: [6]u8 = undefined;
+    const str = try std.fmt.bufPrint(&buf, "{}", .{request.body.buffer.size});
 
-        client.pipeline.?.deinit();
+    request.parts.headers.add("Content-Length", str[0..str.len]);
 
-        // std.debug.print("\nResponse: \n{s}\n", .{response.body.buffer.str()});
-        return try response.body.get(client.allocator, T);
+    var response = try self.client.send(ResourceType.docs, rl[0..rl.len], &request);
 
-    }
+    self.client.pipeline.?.deinit();
 
-    pub fn readItem(comptime T: type, client: *CosmosClient) !type {
-        _ = T;
-        _ = client;
-    }
+    std.debug.print("\nResponse: \n{s}\n", .{response.body.buffer.str()});
+    return try response.body.get(self.client.allocator, T);
+}
 
-    pub fn readItems(comptime T: type, client: *CosmosClient) ![]type {
-        _ = T;
-        _ = client;
-    }
+pub fn readItems(self: *Container, comptime T: type) !T {
+    var resourceType: [2048]u8 = undefined;
+    const rt = try std.fmt.bufPrint(&resourceType, "/dbs/{s}/colls/{s}/docs", .{ self.db.db.id, self.container.id });
 
-    pub fn updateDocument(comptime T: type, client: *CosmosClient) !type {
-        _ = T;
-        _ = client;
-    }
+    var resourceLink: [2048]u8 = undefined;
+    const rl = try std.fmt.bufPrint(&resourceLink, "dbs/{s}/colls/{s}", .{ self.db.db.id, self.container.id });
 
-    pub fn deleteDocument(comptime T: type, client: *CosmosClient) !type {
-        _ = T;
-        _ = client;
-    }
-};
+    try self.client.reinitPipeline();
+
+    var mip = MaxItemPolicy.new(10);
+    try self.client.pipeline.?.policies.add(mip.policy());
+
+    var cpq = CrossPartitionQueryPolicy.new("False");
+    try self.client.pipeline.?.policies.add(cpq.policy());
+
+    var request = try self.client.createRequest(rt[0..rt.len], Method.get, Version.Http11);
+
+    var buf: [6]u8 = undefined;
+    const str = try std.fmt.bufPrint(&buf, "{}", .{request.body.buffer.size});
+
+    request.parts.headers.add("Content-Length", str[0..str.len]);
+
+    var response = try self.client.send(ResourceType.docs, rl[0..rl.len], &request);
+
+    self.client.pipeline.?.deinit();
+
+    std.debug.print("\nResponse: \n{s}\n", .{response.body.buffer.str()});
+    return try response.body.get(self.client.allocator, T);
+}
+
+pub fn updateDocument(self: *Container, comptime T: type, payload: T, id: []const u8, partitionKey: []const u8) !T {
+    var resourceType: [2048]u8 = undefined;
+    const rt = try std.fmt.bufPrint(&resourceType, "/dbs/{s}/colls/{s}/docs/{s}", .{ self.db.db.id, self.container.id, id });
+
+    var resourceLink: [2048]u8 = undefined;
+    const rl = try std.fmt.bufPrint(&resourceLink, "dbs/{s}/colls/{s}/docs/{s}", .{ self.db.db.id, self.container.id, id });
+
+    try self.client.reinitPipeline();
+
+    var pkp = PartitionKeyPolicy.new(partitionKey);
+    try self.client.pipeline.?.policies.add(pkp.policy());
+
+    var request = try self.client.createRequest(rt[0..rt.len], Method.put, Version.Http11);
+
+    try request.body.set(payload);
+
+    var buf: [6]u8 = undefined;
+    const str = try std.fmt.bufPrint(&buf, "{}", .{request.body.buffer.size});
+
+    request.parts.headers.add("Content-Length", str[0..str.len]);
+
+    var response = try self.client.send(ResourceType.docs, rl[0..rl.len], &request);
+
+    self.client.pipeline.?.deinit();
+
+    // std.debug.print("\nResponse: \n{s}\n", .{response.body.buffer.str()});
+    return try response.body.get(self.client.allocator, T);
+}
+
+pub fn deleteDocument(self: *Container, id: []const u8, partitionKey: []const u8) !void {
+    var resourceType: [2048]u8 = undefined;
+    const rt = try std.fmt.bufPrint(&resourceType, "/dbs/{s}/colls/{s}/docs/{s}", .{ self.db.db.id, self.container.id, id });
+
+    var resourceLink: [2048]u8 = undefined;
+    const rl = try std.fmt.bufPrint(&resourceLink, "dbs/{s}/colls/{s}/docs/{s}", .{ self.db.db.id, self.container.id, id });
+
+    try self.client.reinitPipeline();
+
+    var pkp = PartitionKeyPolicy.new(partitionKey);
+    try self.client.pipeline.?.policies.add(pkp.policy());
+
+    var request = try self.client.createRequest(rt[0..rt.len], Method.delete, Version.Http11);
+
+    const response = try self.client.send(ResourceType.docs, rl[0..rl.len], &request);
+    _ = response;
+
+    self.client.pipeline.?.deinit();
+
+    // std.debug.print("\nResponse: \n{s}\n", .{response.body.buffer.str()});
+    // return try response.body.get(self.client.allocator, T);
+}
+
+pub fn queryItems(self: *Container, comptime T: type, query: T) !T {
+    var resourceType: [2048]u8 = undefined;
+    const rt = try std.fmt.bufPrint(&resourceType, "/dbs/{s}/colls/{s}/docs", .{ self.db.db.id, self.container.id });
+
+    var resourceLink: [2048]u8 = undefined;
+    const rl = try std.fmt.bufPrint(&resourceLink, "dbs/{s}/colls/{s}", .{ self.db.db.id, self.container.id });
+
+    try self.client.reinitPipeline();
+
+    var qp = QueryPolicy.new("True");
+    try self.client.pipeline.?.policies.add(qp.policy());
+
+    var request = try self.client.createRequest(rt[0..rt.len], Method.post, Version.Http11);
+
+    try request.body.set(query);
+
+    var buf: [6]u8 = undefined;
+    const str = try std.fmt.bufPrint(&buf, "{}", .{request.body.buffer.size});
+
+    request.parts.headers.add("Content-Length", str[0..str.len]);
+
+    var response = try self.client.send(ResourceType.docs, rl[0..rl.len], &request);
+
+    self.client.pipeline.?.deinit();
+
+    std.debug.print("\nResponse: \n{s}\n", .{response.body.buffer.str()});
+    return try response.body.get(self.client.allocator, T);
+}

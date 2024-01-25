@@ -21,14 +21,13 @@ pub const IndexingMode = enum(u8) {
 };
 
 pub const IncludedPathIndex = struct {
-    data_type: DataType,
+    dataType: []const u8,
     precision: ?i8,
-    kind: KeyKind,
+    kind: []const u8,
 };
 
 pub const IncludedPath = struct {
     path: []const u8,
-    indexes: ?[]IncludedPathIndex,
 };
 
 pub const ExcludedPath = struct {
@@ -37,20 +36,33 @@ pub const ExcludedPath = struct {
 
 pub const IndexingPolicy = struct {
     automatic: bool,
-    indexing_mode: IndexingMode,
-    included_paths: []IncludedPath,
-    excluded_paths: []ExcludedPath,
+    indexingMode: []const u8,
+    includedPaths: []IncludedPath,
+    excludedPaths: []ExcludedPath,
 };
 
 pub const PartitionKey = struct {
     paths: [][]const u8,
-    kind: KeyKind,
+    kind: []const u8,
+    version: u8,
+};
+
+pub const ConflictResolutionPolicy = struct {
+    mode: []const u8,
+    conflictResolutionPath: []const u8,
+    conflictResolutionProcedure: []const u8,
+};
+
+pub const GeospatialConfig = struct {
+    type: []const u8,
 };
 
 pub const ContainerResponse = struct {
     id: []const u8,
-    indexing_policy: IndexingPolicy,
-    parition_key: PartitionKey,
+    indexingPolicy: IndexingPolicy,
+    partitionKey: PartitionKey,
+    conflictResolutionPolicy: ConflictResolutionPolicy,
+    geospatialConfig: GeospatialConfig,
     _rid: []const u8,
     _ts: u64,
     _self: []const u8,
@@ -60,4 +72,10 @@ pub const ContainerResponse = struct {
     _triggers: []const u8,
     _udfs: []const u8,
     _conflicts: []const u8,
+};
+
+pub const Containers = struct {
+    _rid: []const u8,
+    DocumentCollections: []ContainerResponse,
+    _count: u64,
 };

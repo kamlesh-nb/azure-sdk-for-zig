@@ -19,39 +19,54 @@ fn wait(self: *RetryPolicy, duration: u64) void {
     std.time.sleep(duration);
 }
 
+fn calculateExponentialDelay(self: *RetryPolicy, retries: u32) u64 {
+    const exponentialDelay = self.retryDelayInMs * std.math.pow(u64, 2, retries);
+    return @min(self.maxRetryDelayInMs, exponentialDelay);
+}
+
 pub fn send(ptr: *anyopaque, arena: *std.heap.ArenaAllocator, request: *Request, next: []const Policy) anyerror!Response {
     const self: *RetryPolicy = @ptrCast(@alignCast(ptr));
     var retries: u32 = 0;
+    var delay: u64 = 0;
     while (true) {
         const response = try next[0].send(arena, request, next[1..]);
-        if (response.parts.status == Status.ok or response.parts.status == Status.created) {
-            return response;
-        }
-        else if (response.parts.status != Status.ok or response.parts.status != Status.created) {
-            if (retries > self.options.maxRetries) {
+
+        switch (response.parts.status) {
+            .ok, .created => {
                 return response;
-            }
-            if (response.parts.status == Status.bad_request or response.parts.status == Status.unauthorized) {
-                return response;
-            } else if (response.parts.status == Status.too_many_requests) {
-                // const retry_after =  response.parts.headers.get("Retry-After"); / /TODO: parse this
+            },
+            .too_many_requests => {
+
+                //expecting any of the below headers will be sent by the server
+                const retry_after = response.parts.headers.get("Retry-After");
                 const retry_after_ms = response.parts.headers.get("retry-after-ms");
                 const x_ms_retry_after_ms = response.parts.headers.get("x-ms-retry-after-ms");
-                if (retry_after_ms) |ra| {
-                    const _retry_after_ms: u64 = try std.fmt.parseInt(u64, ra, 10);
-                    self.wait(_retry_after_ms);
-                } else if (x_ms_retry_after_ms) |xra| {
-                    const _x_ms_retry_after_ms: u64 = try std.fmt.parseInt(u64, xra, 10);
-                    self.wait(_x_ms_retry_after_ms);
+
+                if (retry_after) |ra| {
+                    const _retry_after: u64 = try std.fmt.parseInt(u64, ra, 10);
+                    delay = _retry_after * 1000000000;
+                    self.wait(delay);
+                } else if (retry_after_ms) |ram| {
+                    const _retry_after_ms: u64 = try std.fmt.parseInt(u64, ram, 10);
+                    delay = _retry_after_ms * 1000000;
+                    self.wait(delay);
+                } else if (x_ms_retry_after_ms) |xram| {
+                    const _x_ms_retry_after_ms: u64 = try std.fmt.parseInt(u64, xram, 10);
+                    delay = _x_ms_retry_after_ms * 1000000;
+                    self.wait(delay);
                 }
-            } else {
-                const exponentialDelay = self.options.retryDelayInMs * std.math.pow(u64, 2, retries);
-                const clampedExponentialDelay = @min(self.options.maxRetryDelayInMs, exponentialDelay);
-                self.wait(clampedExponentialDelay);
-            }
-            retries += 1;
-        } else {
-            return response;
+            },
+            .internal_server_error, .bad_gateway, .service_unavailable, .gateway_timeout, .request_timeout => {
+                if (retries > self.options.maxRetries) {
+                    return response;
+                }
+                const exponentialDelay = self.calculateExponentialDelay(retries);
+                self.wait(exponentialDelay);
+                retries += 1;
+            },
+            else => {
+                return response;
+            },
         }
     }
 }

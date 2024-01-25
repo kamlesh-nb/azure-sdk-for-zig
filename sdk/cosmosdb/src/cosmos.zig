@@ -13,6 +13,7 @@ const E = @import("enums.zig");
 const ResourceType = E.ResourceType;
 const Authorization = @import("authorization.zig");
 const Database = @import("database.zig");
+const DatabaseResponse = @import("resources/database.zig").DatabaseResponse;
 const Buffer = core.Buffer;
 const Request = core.Request;
 const Response = core.Response;
@@ -93,7 +94,8 @@ pub fn getDatabase(client: *CosmosClient, id: []const u8) !Database {
 
     client.pipeline.?.deinit();
 
-    return response.body.get(client.allocator, Database);
+    const db = try response.body.get(client.allocator, DatabaseResponse);
+    return Database{ .client =client, .db = db };
 }
 
 pub fn createDatabase(client: *CosmosClient, id: []const u8) !Database {
