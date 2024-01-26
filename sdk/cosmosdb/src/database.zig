@@ -3,6 +3,8 @@ const CosmosClient = @import("cosmos.zig");
 const Container = @import("container.zig");
 const E = @import("enums.zig");
 const ResourceType = E.ResourceType;
+
+const CosmosErrors = @import("errors.zig").CosmosErrors;
 const DatabaseResponse = @import("resources/database.zig").DatabaseResponse;
 const ContainerResponse = @import("resources/container.zig").ContainerResponse;
 const Containers = @import("resources/container.zig").Containers;
@@ -16,11 +18,10 @@ const Version = core.Version;
 
 const Database = @This();
 
-
 client: *CosmosClient,
 db: DatabaseResponse,
 
-pub fn getContainer(self: *Database, id: []const u8) !Container {
+pub fn getContainer(self: *Database, id: []const u8) anyerror!Container {
     var resourceType: [2048]u8 = undefined;
     const rt = try std.fmt.bufPrint(&resourceType, "/dbs/{s}/colls/{s}", .{ self.db.id, id });
 
@@ -33,31 +34,23 @@ pub fn getContainer(self: *Database, id: []const u8) !Container {
 
     self.client.pipeline.?.deinit();
 
-    const containter = try response.body.get(self.client.allocator, ContainerResponse);
-
-    return Container{ .client = self.client, .db = self, .container = containter };
+    switch (response.parts.status) {
+        .ok => {
+            const containter = try response.body.get(self.client.allocator, ContainerResponse);
+            return Container{ .client = self.client, .db = self, .container = containter };
+        },
+        .not_found => {
+            std.log.err("\nError: \n{s}\n", .{response.body.buffer.str()});
+            return error.ContainerNotFound;
+        },
+        else => {
+            std.log.err("\nError:-\n{s}\n", .{response.body.buffer.str()});
+            return error.UnknownError;
+        },
+    }
 }
 
-pub fn getContainers(self: *Database) !Containers {
-    var resourceType: [2048]u8 = undefined;
-    const rt = try std.fmt.bufPrint(&resourceType, "/dbs/{s}/colls", .{self.db.id});
-
-    var resourceLink: [2048]u8 = undefined;
-    const rl = try std.fmt.bufPrint(&resourceLink, "dbs/{s}/colls", .{self.db.id});
-
-    try self.client.reinitPipeline();
-
-    var request = try self.client.createRequest(rt[0..rt.len], Method.get, Version.Http11);
-
-    var response = try self.client.send(ResourceType.colls, rl[0..rl.len], &request);
-
-    self.client.pipeline.?.deinit();
-
-    return try response.body.get(self.client.allocator, Containers);
-
-}
-
-pub fn createContainer(self: *Database, id: []const u8, partitionKey: []const u8) !Container {
+pub fn createContainer(self: *Database, id: []const u8, partitionKey: []const u8) anyerror!Container {
     var resourceType: [2048]u8 = undefined;
     const rt = try std.fmt.bufPrint(&resourceType, "/dbs/{s}/colls", .{self.db.id});
 
@@ -106,15 +99,31 @@ pub fn createContainer(self: *Database, id: []const u8, partitionKey: []const u8
 
     self.client.pipeline.?.deinit();
 
-    // std.debug.print("\nResponse: \n{s}\n", .{response.body.buffer.str()});
-
-    const contnr = try response.body.get(self.client.allocator, ContainerResponse);
-
-    return Container{ .client = self.client, .db = self, .container = contnr };
+    switch (response.parts.status) {
+        .ok, .created => {
+            const contnr = try response.body.get(self.client.allocator, ContainerResponse);
+            return Container{ .client = self.client, .db = self, .container = contnr };
+        },
+        .conflict => {
+            std.log.err("\nError: \n{s}\n", .{response.body.buffer.str()});
+            return error.ContainterAlreadyExists;
+        },
+        .bad_request => {
+            std.log.err("\nError: \n{s}\n", .{response.body.buffer.str()});
+            return error.BadRequest;
+        },
+        .not_found => {
+            std.log.err("\nError: \n{s}\n", .{response.body.buffer.str()});
+            return error.ContainerNotFound;
+        },
+        else => {
+            std.log.err("\nError:-\n{s}\n", .{response.body.buffer.str()});
+            return error.UnknownError;
+        },
+    }
 }
 
-pub fn deleteContainer(self: *Database, id: []const u8, client: *CosmosClient) Container {
-    _ = client;
+pub fn deleteContainer(self: *Database, id: []const u8) anyerror!void {
     var resourceType: [2048]u8 = undefined;
     const rt = try std.fmt.bufPrint(&resourceType, "/dbs/{s}/colls/{s}", .{ self.db.id, id });
 
@@ -129,9 +138,17 @@ pub fn deleteContainer(self: *Database, id: []const u8, client: *CosmosClient) C
 
     self.client.pipeline.?.deinit();
 
-    // std.debug.print("\nResponse: \n{s}\n", .{response.body.buffer.str()});
-
-    const contnr = try response.body.get(self.client.allocator, ContainerResponse);
-
-    return Container{ .client = self.client, .db = self, .container = contnr };
+     switch (response.parts.status) {
+        .ok, .no_content, .accepted => {
+            return;
+        },
+        .not_found => {
+            std.log.err("\nError: \n{s}\n", .{response.body.buffer.str()});
+            return error.ContainerNotFound;
+        },
+        else => {
+            std.log.err("\nError:\n{s}\n", .{response.body.buffer.str()});
+            return error.UnknownError;
+        },
+     }
 }

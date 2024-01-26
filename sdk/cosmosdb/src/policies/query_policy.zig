@@ -13,10 +13,10 @@ pub fn new(_query: []const u8) QueryPolicy {
         .query = _query,
     };
 }
-
+ 
 pub fn send(ptr: *anyopaque, arena: *std.heap.ArenaAllocator, request: *Request, next: []const Policy) anyerror!Response {
     const self: *QueryPolicy = @ptrCast(@alignCast(ptr));
-    request.parts.headers.add("x-ms-documentdb-query-enablecrosspartition", self.cross_partition_query);
+    request.parts.headers.add("x-ms-documentdb-isquery", self.query);
     return next[0].send(arena, request, next[1..]);
 }
 

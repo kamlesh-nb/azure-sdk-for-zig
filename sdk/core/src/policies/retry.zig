@@ -32,7 +32,7 @@ pub fn send(ptr: *anyopaque, arena: *std.heap.ArenaAllocator, request: *Request,
         const response = try next[0].send(arena, request, next[1..]);
 
         switch (response.parts.status) {
-            .ok, .created => {
+            .ok, .created, .no_content => {
                 return response;
             },
             .too_many_requests => {

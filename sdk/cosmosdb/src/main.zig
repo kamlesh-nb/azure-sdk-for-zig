@@ -5,6 +5,8 @@ const http = @import("http");
 const Method = http.Method;
 const Request = http.Request;
 const Response = http.Response;
+const Query = @import("resources/query.zig").Query;
+const Parameter = @import("resources/query.zig").Parameter;
 
 const CosmosClient = @import("cosmos.zig");
 const Database = @import("database.zig");
@@ -52,18 +54,22 @@ pub fn main() !void {
     const account = env.get("COSMOSDB_ACCOUNT").?;
     const key = env.get("COSMOSDB_KEY").?;
     var client = try CosmosClient.init(&Arena, account, key);
+    // const db = try client.createDatabase("floki");
+
     var db = try client.getDatabase("floki");
+    // _ = try db.createContainer("SaleOrder", "/id");
+    // std.debug.print("\nParsed: {any}\n", .{db.db.id});
+    // try db.deleteContainer("SaleOrder");
     // const cont = try db.createContainer("SaleOrder", "/id");
 
     var container = try db.getContainer("SaleOrder");
-
     const saleOrder = .{
-        .id = "148",
+        .id = "166",
         .PoNumber = "PO123439186470",
-        .OrderDate = "2005-09-21T00:00:00Z",
+        .OrderDate = "2005-09-12T00:00:00Z",
         .ShippedDate = "2005-07-28T00:00:00Z",
         .AccountNumber = "10-4332-000910",
-        .RegionId = "RU",
+        .RegionId = "SE",
         .SubTotal = 1219.4589,
         .TaxAmount = 122.5838,
         .Freight = 472.3108,
@@ -78,5 +84,29 @@ pub fn main() !void {
     _ = item;
 
     const items = try container.readItems(SaleOrders);
-    std.debug.print("\nParsed: {any}\n", .{items});
+    std.debug.print("\nAll Items: {any}\n", .{items});
+    const qry = .{
+        .query = "SELECT * FROM SaleOrder s WHERE s.RegionId = @regionId",
+        .parameters = .{
+            .{ .name = "@regionId", .value = "WA" },
+        },
+    };
+
+    const result = try container.queryItems(SaleOrders, qry);
+    std.debug.print("\nQuery Results: \n{any}\n", .{result});
+
+    // var doc = result.Documents[0];
+    // doc.ShippedDate = "2005-12-21T00:00:00Z";
+    // doc.RegionId = "RU";
+    // const upd = try container.updateItem(SaleOrder, doc, doc.id, doc.id);
+    // std.debug.print("\nParsed: {any}\n", .{upd});
+
+    // try container.deleteItem("248", "248");
+
+    // const so = container.readItem(SaleOrder, "253", "153");
+    if (container.readItem(SaleOrder, "153", "153")) |so| {
+        std.debug.print("\nItem Read: {any}\n", .{so});
+    } else |err| {
+        std.debug.print("\nError: {any}\n", .{err});
+    }
 }
