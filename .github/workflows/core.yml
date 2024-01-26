@@ -6,15 +6,17 @@ jobs:
     needs: build-project
     runs-on: ubuntu-latest
     steps:
+      - name: Create release folder
+        run: mkdir -p github-release
       - name: Download Release Core
         uses: actions/download-artifact@v2
         with:
           name: release-core
       - name: Archive Release Core
-        uses: thedoctor0/zip-release@master
+        uses: thedoctor0/zip-release@0.7.1
         with:
           type: "tar"
-          filename: core.tar.gz
+          filename: "github-release/core.tar.gz"
       - name: Create Release Core
         id: create-new-release
         uses: actions/create-release@master
@@ -29,7 +31,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create-new-release.outputs.upload_url }}
-          asset_path: ./core.tar.gz
+          asset_path: "github-release/core.tar.gz"
           asset_name: core-v${{ github.run_number }}.tar.gz
           asset_content_type: application/gzip
   build-project:
