@@ -33,7 +33,7 @@ jobs:
         with:
           upload_url: ${{ steps.create-new-release.outputs.upload_url }}
           asset_path: "github-release/core.tar.gz"
-          asset_name: core-v${{ github.run_number }}.tar.gz
+          asset_name: azcore.tar.gz
           asset_content_type: application/gzip
   build-project:
     name: Build Project
