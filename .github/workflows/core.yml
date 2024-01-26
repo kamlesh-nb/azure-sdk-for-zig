@@ -40,5 +40,5 @@ jobs:
       - name: Upload Core Package
         uses: actions/upload-artifact@v2
         with:
-          name: core
+          name: release-core
           path: ./sdk/core
