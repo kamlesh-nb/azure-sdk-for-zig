@@ -17,6 +17,7 @@ jobs:
         with:
           type: "tar"
           filename: "github-release/core.tar.gz"
+          exclusions: "github-release"
       - name: Create Release Core
         id: create-new-release
         uses: actions/create-release@master
