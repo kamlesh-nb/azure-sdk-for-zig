@@ -1,0 +1,48 @@
+name: Release CosmosDb
+on: [push]
+jobs:
+  release-cosmosdb:
+    name: Release CosmosDb
+    needs: build-project
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create release folder
+        run: mkdir -p github-release
+      - name: Download Release CosmosDb
+        uses: actions/download-artifact@v2
+        with:
+          name: release-cosmosdb
+      - name: Archive Release CosmosDb
+        uses: thedoctor0/zip-release@0.7.1
+        with:
+          type: "tar"
+          filename: "github-release/cosmosdb.tar.gz"
+          exclusions: "github-release"
+      - name: Create Release CosmosDb
+        id: create-new-release
+        uses: actions/create-release@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.run_number }}
+          release_name: Release ${{ github.run_number }}
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create-new-release.outputs.upload_url }}
+          asset_path: "github-release/cosmosdb.tar.gz"
+          asset_name: azcosmosdb.tar.gz
+          asset_content_type: application/gzip
+  build-project:
+    name: Build Project
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Upload CosmosDb Package
+        uses: actions/upload-artifact@v2
+        with:
+          name: release-cosmosdb
+          path: ./sdk/cosmosdb
