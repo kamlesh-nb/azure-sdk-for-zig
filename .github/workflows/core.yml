@@ -16,7 +16,7 @@ jobs:
         uses: thedoctor0/zip-release@0.7.1
         with:
           type: "tar"
-          filename: "core.tar.gz"
+          filename: "github-release/core.tar.gz"
       - name: Create Release Core
         id: create-new-release
         uses: actions/create-release@master
