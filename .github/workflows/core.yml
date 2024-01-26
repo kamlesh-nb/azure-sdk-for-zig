@@ -13,7 +13,8 @@ jobs:
       - name: Archive Release Core
         uses: thedoctor0/zip-release@master
         with:
-          filename: core.zip
+          type: "tar"
+          filename: core.tar.gz
       - name: Create Release Core
         id: create-new-release
         uses: actions/create-release@master
@@ -23,18 +24,14 @@ jobs:
           tag_name: ${{ github.run_number }}
           release_name: Release ${{ github.run_number }}
       - name: Upload Release Asset
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          name: my-artifact
-          path: ./sdk/core
-        # uses: actions/upload-release-asset@v1
-        # env:
-        #   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        # with:
-        #   upload_url: ${{ steps.create-new-release.outputs.upload_url }}
-        #   asset_path: ./core.zip
-        #   asset_name: core-v${{ github.run_number }}.zip
-        #   asset_content_type: application/zip
+          upload_url: ${{ steps.create-new-release.outputs.upload_url }}
+          asset_path: ./core.tar.gz
+          asset_name: core-v${{ github.run_number }}.tar.gz
+          asset_content_type: application/gzip
   build-project:
     name: Build Project
     runs-on: ubuntu-latest
