@@ -1,41 +1,11 @@
 const std = @import("std");
 
+const SaleOrder = @import("sale_order.zig").SaleOrder;
+
 const cosmos = @import("azcosmos");
 
 const CosmosClient = cosmos.CosmosClient;
 const Database = cosmos.Database;
-
-const Item = struct {
-    OrderQty: i32,
-    ProductId: i32,
-    UnitPrice: f64,
-    LineTotal: f64,
-};
-
-pub const SaleOrder = struct {
-    id: []const u8,
-    PoNumber: []const u8,
-    OrderDate: []const u8,
-    ShippedDate: []const u8,
-    AccountNumber: []const u8,
-    RegionId: []const u8,
-    SubTotal: f64,
-    TaxAmount: f64,
-    Freight: f64,
-    TotalDue: f64,
-    Items: []Item,
-    _rid: []const u8 = undefined,
-    _self: []const u8 = undefined,
-    _etag: []const u8 = undefined,
-    _ts: u64 = undefined,
-    _attachments: []const u8 = undefined,
-};
-
-const SaleOrders = struct {
-    _rid: []const u8,
-    Documents: []SaleOrder,
-    _count: u64,
-};
 
 pub fn main() !void {
     var Arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
@@ -54,7 +24,7 @@ pub fn main() !void {
     var container = try db.getContainer("SaleOrder");
 
     const saleOrder = .{
-        .id = "170",
+        .id = "174",
         .PoNumber = "PO123439186470",
         .OrderDate = "2005-09-12T00:00:00Z",
         .ShippedDate = "2005-07-28T00:00:00Z",
@@ -71,5 +41,5 @@ pub fn main() !void {
     };
 
     const item = try container.createItem(SaleOrder, saleOrder, saleOrder.id);
-    std.debug.print("Created item:\n{any}", .{item});
+    std.debug.print("Created Item:\n{any}", .{item});
 }

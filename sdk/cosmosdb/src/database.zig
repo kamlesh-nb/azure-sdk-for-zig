@@ -40,11 +40,11 @@ pub fn getContainer(self: *Database, id: []const u8) anyerror!Container {
             return Container{ .client = self.client, .db = self, .container = containter };
         },
         .not_found => {
-            std.log.err("\nError: \n{s}\n", .{response.body.buffer.str()});
+            std.log.err("\nError:\n{s}\n", .{response.body.buffer.str()});
             return error.ContainerNotFound;
         },
         else => {
-            std.log.err("\nError:-\n{s}\n", .{response.body.buffer.str()});
+            std.log.err("\nError:\n{s}\n", .{response.body.buffer.str()});
             return error.UnknownError;
         },
     }
@@ -105,19 +105,19 @@ pub fn createContainer(self: *Database, id: []const u8, partitionKey: []const u8
             return Container{ .client = self.client, .db = self, .container = contnr };
         },
         .conflict => {
-            std.log.err("\nError: \n{s}\n", .{response.body.buffer.str()});
+            std.log.err("\nError:\n{s}\n", .{response.body.buffer.str()});
             return error.ContainterAlreadyExists;
         },
         .bad_request => {
-            std.log.err("\nError: \n{s}\n", .{response.body.buffer.str()});
+            std.log.err("\nError:\n{s}\n", .{response.body.buffer.str()});
             return error.BadRequest;
         },
         .not_found => {
-            std.log.err("\nError: \n{s}\n", .{response.body.buffer.str()});
+            std.log.err("\nError:\n{s}\n", .{response.body.buffer.str()});
             return error.ContainerNotFound;
         },
         else => {
-            std.log.err("\nError:-\n{s}\n", .{response.body.buffer.str()});
+            std.log.err("\nError:\n{s}\n", .{response.body.buffer.str()});
             return error.UnknownError;
         },
     }
@@ -143,7 +143,7 @@ pub fn deleteContainer(self: *Database, id: []const u8) anyerror!void {
             return;
         },
         .not_found => {
-            std.log.err("\nError: \n{s}\n", .{response.body.buffer.str()});
+            std.log.err("\nError:\n{s}\n", .{response.body.buffer.str()});
             return error.ContainerNotFound;
         },
         else => {

@@ -100,11 +100,11 @@ pub fn getDatabase(client: *CosmosClient, id: []const u8) anyerror!Database {
             return Database{ .client = client, .db = db };
         },
         .not_found => {
-            std.log.err("\nError: \n{s}\n", .{response.body.buffer.str()});
+            std.log.err("\nError:\n{s}\n", .{response.body.buffer.str()});
             return error.DatabaseNotFound;
         },
         else => {
-            std.log.err("\nError:-\n{s}\n", .{response.body.buffer.str()});
+            std.log.err("\nError:\n{s}\n", .{response.body.buffer.str()});
             return error.UnknownError;
         },
     }
@@ -134,19 +134,19 @@ pub fn createDatabase(client: *CosmosClient, id: []const u8) anyerror!Database {
             return Database{ .client = client, .db = db };
         },
         .bad_request => {
-            std.log.err("\nError: \n{s}\n", .{response.body.buffer.str()});
+            std.log.err("\nError:\n{s}\n", .{response.body.buffer.str()});
             return error.BadRequest;
         },
         .conflict => {
-            std.log.err("\nError: \n{s}\n", .{response.body.buffer.str()});
+            std.log.err("\nError:\n{s}\n", .{response.body.buffer.str()});
             return error.DatabaseAlreadyExists;
         },
         .unauthorized => {
-            std.log.err("\nError: \n{s}\n", .{response.body.buffer.str()});
+            std.log.err("\nError:\n{s}\n", .{response.body.buffer.str()});
             return error.Unauthorized;
         },
         else => {
-            std.log.err("\nError:-\n{s}\n", .{response.body.buffer.str()});
+            std.log.err("\nError:\n{s}\n", .{response.body.buffer.str()});
             return error.UnknownError;
         },
     }

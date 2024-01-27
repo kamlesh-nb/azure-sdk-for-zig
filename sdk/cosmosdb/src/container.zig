@@ -55,19 +55,19 @@ pub fn createItem(self: *Container, comptime T: type, payload: anytype, partitio
             return try response.body.get(self.client.allocator, T);
         },
         .bad_request => {
-            std.log.err("\nError: \n{s}\n", .{response.body.buffer.str()});
+            std.log.err("\nError:\n{s}\n", .{response.body.buffer.str()});
             return error.BadRequest;
         },
         .forbidden => {
-            std.log.err("\nError: \n{s}\n", .{response.body.buffer.str()});
+            std.log.err("\nError:\n{s}\n", .{response.body.buffer.str()});
             return error.Forbidden;
         },
         .conflict => {
-            std.log.err("\nError: \n{s}\n", .{response.body.buffer.str()});
+            std.log.err("\nError:\n{s}\n", .{response.body.buffer.str()});
             return error.ItemAlreadyExists;
         },
         else => {
-            std.log.err("\nError:-\n{s}\n", .{response.body.buffer.str()});
+            std.log.err("\nError:\n{s}\n", .{response.body.buffer.str()});
             return error.UnknownError;
         },
     }
@@ -101,19 +101,19 @@ pub fn readItem(self: *Container, comptime T: type, item_id: []const u8, partiti
             return try response.body.get(self.client.allocator, T);
         },
         .not_found => {
-            std.log.err("\nError: \n{s}\n", .{response.body.buffer.str()});
+            std.log.err("\nError:\n{s}\n", .{response.body.buffer.str()});
             return error.ItemNotFound;
         },
         .bad_request => {
-            std.log.err("\nError: \n{s}\n", .{response.body.buffer.str()});
+            std.log.err("\nError:\n{s}\n", .{response.body.buffer.str()});
             return error.BadRequest;
         },
         .not_modified => {
-            std.log.err("\nError: \n{s}\n", .{response.body.buffer.str()});
+            std.log.err("\nError:\n{s}\n", .{response.body.buffer.str()});
             return error.ItemAlreadyExists;
         },
         else => {
-            std.log.err("\nError:-\n{s}\n", .{response.body.buffer.str()});
+            std.log.err("\nError:\n{s}\n", .{response.body.buffer.str()});
             return error.UnknownError;
         },
     }
@@ -149,19 +149,19 @@ pub fn updateItem(self: *Container, comptime T: type, payload: T, id: []const u8
             return try response.body.get(self.client.allocator, T);
         },
         .entity_too_large => {
-            std.log.err("\nError: \n{s}\n", .{response.body.buffer.str()});
+            std.log.err("\nError:\n{s}\n", .{response.body.buffer.str()});
             return error.EntityTooLarge;
         },
         .bad_request => {
-            std.log.err("\nError: \n{s}\n", .{response.body.buffer.str()});
+            std.log.err("\nError:\n{s}\n", .{response.body.buffer.str()});
             return error.BadRequest;
         },
         .not_found => {
-            std.log.err("\nError: \n{s}\n", .{response.body.buffer.str()});
+            std.log.err("\nError:\n{s}\n", .{response.body.buffer.str()});
             return error.ContainerNotFound;
         },
         else => {
-            std.log.err("\nError:-\n{s}\n", .{response.body.buffer.str()});
+            std.log.err("\nError:\n{s}\n", .{response.body.buffer.str()});
             return error.UnknownError;
         },
     }
@@ -190,7 +190,7 @@ pub fn deleteItem(self: *Container, id: []const u8, partitionKey: []const u8) !v
             return;
         },
         .not_found => {
-            std.log.err("\nError: \n{s}\n", .{response.body.buffer.str()});
+            std.log.err("\nError:\n{s}\n", .{response.body.buffer.str()});
             return error.ContainerNotFound;
         },
         else => {
@@ -238,7 +238,7 @@ pub fn queryItems(self: *Container, comptime T: type, query: anytype) !T {
             return try response.body.get(self.client.allocator, T);
         },
         .bad_request => {
-            std.log.err("\nError: \n{s}\n", .{response.body.buffer.str()});
+            std.log.err("\nError:\n{s}\n", .{response.body.buffer.str()});
             return error.BadRequest;
         },
         else => {
@@ -280,7 +280,7 @@ pub fn patchItem(self: *Container, comptime T: type, id: []const u8, partitionKe
             return try response.body.get(self.client.allocator, T);
         },
         .bad_request => {
-            std.log.err("\nError: \n{s}\n", .{response.body.buffer.str()});
+            std.log.err("\nError:\n{s}\n", .{response.body.buffer.str()});
             return error.BadRequest;
         },
         else => {
