@@ -23,7 +23,7 @@ Here's a quick sample for connecting to Aziure CosmosDb, creating database and c
 zig fetch --save https://github.com/kamlesh-nb/azure-sdk-for-zig/releases/download/6/azcosmosdb.tar.gz
 ```
 
-```
+```zig
 const std = @import("std");
 
 const cosmos = @import("azcosmos");
