@@ -16,8 +16,8 @@
     // internet connectivity.
     .dependencies = .{
         .azcosmos = .{
-            .url = "https://github.com/kamlesh-nb/azure-sdk-for-zig/releases/download/5/azcosmosdb.tar.gz",
-            .hash = "1220c7a8a2c9ff5c1e9e857bd8f7303f311d89256812b8259d6a7fc89190cbc62a5c",
+            .url = "https://github.com/kamlesh-nb/azure-sdk-for-zig/releases/download/6/azcosmosdb.tar.gz",
+            .hash = "12206357031ce882255e695652f1f3c78101e297a72ee40940540d059ead7b443404",
         },
     },
     .paths = .{
