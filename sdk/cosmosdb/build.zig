@@ -1,8 +1,6 @@
 const std = @import("std");
 
-
 pub fn build(b: *std.Build) void {
-
     const target = b.standardTargetOptions(.{});
 
     const optimize = b.standardOptimizeOption(.{});
@@ -14,11 +12,15 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
 
-    lib.root_module.addImport("datetime", b.dependency("datetime", .{
-        .target = target,
-        .optimize = optimize,
-    }).module("datetime"));
-
+    _ = b.addModule("azcosmos", .{
+        .root_source_file = .{ .path = "src/root.zig" },
+        .imports = &.{
+            .{
+                .name = "azcore",
+                .module = b.dependency("azcore", .{}).module("azcore"),
+            },
+        },
+    });
 
     lib.root_module.addImport("azcore", b.dependency("azcore", .{
         .target = target,
@@ -33,11 +35,6 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = optimize,
     });
-
-    exe.root_module.addImport("datetime", b.dependency("datetime", .{
-        .target = target,
-        .optimize = optimize,
-    }).module("datetime"));
 
     exe.root_module.addImport("azcore", b.dependency("azcore", .{
         .target = target,
@@ -75,8 +72,6 @@ pub fn build(b: *std.Build) void {
 
     const run_tests = b.addRunArtifact(tests);
 
-     
     const test_step = b.step("test", "Run unit tests");
     test_step.dependOn(&run_tests.step);
- 
 }

@@ -1,4 +1,4 @@
-name: Release Core
+name: AzCore
 on: [workflow_dispatch]
 jobs:
   release-core:

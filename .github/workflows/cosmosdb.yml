@@ -1,4 +1,4 @@
-name: Release CosmosDb
+name: AzCosmosDb
 on: [workflow_dispatch]
 jobs:
   release-cosmosdb:
