@@ -7,7 +7,8 @@
             .hash = "1220348dc86b573420dfa6304f6f2d7159766003bb43f30739f8ba210ac75344b52f",
         },
         .azcore = .{
-            .path = "../core",
+            .url = "https://github.com/kamlesh-nb/azure-sdk-for-zig/releases/download/20/azcore.tar.gz",
+            .hash = "122015e21ad02adca869b5167952b08ec4c95bcd32c6cccc09910481d74b224beb87",
         },
     },
 
