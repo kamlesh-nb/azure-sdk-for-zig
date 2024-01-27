@@ -16,14 +16,14 @@ Here's a quick sample for connecting to Aziure CosmosDb, creating database and c
 
 - Create a Zig executable project 
 
-`zig init`
+```zig init```
 - Fetch CosmosDb package
 
-`
+```
 zig fetch --save https://github.com/kamlesh-nb/azure-sdk-for-zig/releases/download/6/azcosmosdb.tar.gz
-`
+```
 
-`
+```
 const std = @import("std");
 
 const cosmos = @import("azcosmos");
@@ -100,5 +100,5 @@ pub fn main() !void {
     std.debug.print("Created item:\n{any}", .{item});
 }
 
-`
+```
 
