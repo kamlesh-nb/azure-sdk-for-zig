@@ -16,8 +16,8 @@
             .hash = "12200ad6e0ac0405f5bd58e0ece205ff46230f97bdc29383289658786c88c132aa46",
         },
         .http = .{
-            .url = "https://github.com/kamlesh-nb/http/archive/refs/tags/v0.0.2.tar.gz",
-            .hash = "1220fdfe035b240cca41072f5d522fc5eabb1fc10559767326a00483b7a323a05490",
+            .url = "https://github.com/kamlesh-nb/http/archive/refs/tags/v0.0.3.tar.gz",
+            .hash = "1220dbdcd2953ee3291de6afdd85d808c20b3e8a2f86e53a4193feb68097bd421627",
         },
     },
 

@@ -1,10 +1,10 @@
 const std = @import("std");
 const Enums = @import("enums.zig");
-const date = @import("datetime").datetime;
-const tz = @import("datetime").timezones;
 const core = @import("azcore");
 const Buffer = core.Buffer;
 const Method = core.Method;
+const date = core.Date.datetime;
+const tz = core.Date.timezones;
 
 const ResourceType = Enums.ResourceType;
 const DatabaseThoughputMode = Enums.DatabaseThoughputMode;
@@ -47,7 +47,7 @@ pub fn genAuthSig(self: *Authorization, verb: Method, resourceType: ResourceType
     const tokenVersion = "1.0";
 
     try self.getTimeStamp();
-  
+
     var dateBuf: [32]u8 = undefined;
     const requestDate = std.ascii.lowerString(&dateBuf, self.timeStamp);
 
@@ -65,7 +65,7 @@ pub fn genAuthSig(self: *Authorization, verb: Method, resourceType: ResourceType
 
     _ = try self.authSig.writer().print("type={s}&ver={s}&sig={s}", .{ keyType, tokenVersion, signature });
 
-    const authEscaped = try Uri.escapeString(self.allocator,  self.authSig.str());
+    const authEscaped = try Uri.escapeString(self.allocator, self.authSig.str());
     _ = try self.auth.writer().print("{s}", .{authEscaped});
 
     self.allocator.free(authEscaped);
