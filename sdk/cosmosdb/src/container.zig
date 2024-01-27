@@ -119,47 +119,6 @@ pub fn readItem(self: *Container, comptime T: type, item_id: []const u8, partiti
     }
 }
 
-// pub fn readItems(self: *Container, comptime T: type) anyerror!T {
-//     var resourceType: [2048]u8 = undefined;
-//     const rt = try std.fmt.bufPrint(&resourceType, "/dbs/{s}/colls/{s}/docs", .{ self.db.db.id, self.container.id });
-
-//     var resourceLink: [2048]u8 = undefined;
-//     const rl = try std.fmt.bufPrint(&resourceLink, "dbs/{s}/colls/{s}", .{ self.db.db.id, self.container.id });
-
-//     try self.client.reinitPipeline();
-
-//     var mip = MaxItemPolicy.new(20);
-//     try self.client.pipeline.?.policies.add(mip.policy());
-
-//     var cpq = CrossPartitionQueryPolicy.new("False");
-//     try self.client.pipeline.?.policies.add(cpq.policy());
-
-//     var request = try self.client.createRequest(rt[0..rt.len], Method.get, Version.Http11);
-
-//     var buf: [6]u8 = undefined;
-//     const str = try std.fmt.bufPrint(&buf, "{}", .{request.body.buffer.size});
-
-//     request.parts.headers.add("Content-Length", str[0..str.len]);
-
-//     var response = try self.client.send(ResourceType.docs, rl[0..rl.len], &request);
-
-//     self.client.pipeline.?.deinit();
-
-//     switch (response.parts.status) {
-//         .ok => {
-//             return try response.body.get(self.client.allocator, T);
-//         },
-//         .bad_request => {
-//             std.log.err("\nError: \n{s}\n", .{response.body.buffer.str()});
-//             return error.BadRequest;
-//         },
-//         else => {
-//             std.log.err("\nError:-\n{s}\n", .{response.body.buffer.str()});
-//             return error.UnknownError;
-//         },
-//     }
-// }
-
 pub fn updateItem(self: *Container, comptime T: type, payload: T, id: []const u8, partitionKey: []const u8) anyerror!T {
     var resourceType: [2048]u8 = undefined;
     const rt = try std.fmt.bufPrint(&resourceType, "/dbs/{s}/colls/{s}/docs/{s}", .{ self.db.db.id, self.container.id, id });
@@ -289,15 +248,6 @@ pub fn queryItems(self: *Container, comptime T: type, query: anytype) !T {
     }
 }
 
-///Patch the item with the given id and partition key, payload should look like this:
-/// const patch = .{
-///     .condition = "condition"
-///     .operations = .{
-///      .op = "add",
-///       .path = "/address",
-///         .value = "test"
-///     }
-/// }
 pub fn patchItem(self: *Container, comptime T: type, id: []const u8, partitionKey: []const u8, patch: anytype) !T {
     var resourceType: [2048]u8 = undefined;
     const rt = try std.fmt.bufPrint(&resourceType, "/dbs/{s}/colls/{s}/docs/{s}", .{ self.db.db.id, self.container.id, id });

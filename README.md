@@ -12,7 +12,7 @@ What's be developed as of now.
 - If you would like to try CosmosDb Package in Zig, please refer cosmosdb folder sdk/samples or refer below code.
 
 
-Here's a quick sample for connecting to Aziure CosmosDb, creating database and container in the database. You should have CosmosDb Account created in Azure to use below sample.
+Here's a quick sample for connecting to Aziure CosmosDb, creating database, container in the database and an item in the container. You should have CosmosDb Account created in Azure to use below sample.
 
 - Create a Zig executable project 
 
@@ -73,11 +73,12 @@ pub fn main() !void {
 
     const account = env.get("COSMOSDB_ACCOUNT").?;
     const key = env.get("COSMOSDB_KEY").?;
+    
     var client = try CosmosClient.init(&Arena, account, key);
 
-    var db = try client.getDatabase("floki");
+    var db = try client.createDatabase("floki");
 
-    var container = try db.getContainer("SaleOrder");
+    var container = try db.createContainer("SaleOrder", "/id");
 
     const saleOrder = .{
         .id = "170",

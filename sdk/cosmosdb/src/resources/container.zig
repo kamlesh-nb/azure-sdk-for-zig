@@ -73,9 +73,3 @@ pub const ContainerResponse = struct {
     _udfs: []const u8,
     _conflicts: []const u8,
 };
-
-pub const Containers = struct {
-    _rid: []const u8,
-    DocumentCollections: []ContainerResponse,
-    _count: u64,
-};
