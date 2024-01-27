@@ -1,9 +1,9 @@
 name: Release CosmosDb
-on: [push]
+on: [workflow_dispatch]
 jobs:
   release-cosmosdb:
     name: Release CosmosDb
-    needs: build-project
+    needs: build-cosmosdb
     runs-on: ubuntu-latest
     steps:
       - name: Create release folder
@@ -35,8 +35,8 @@ jobs:
           asset_path: "github-release/cosmosdb.tar.gz"
           asset_name: azcosmosdb.tar.gz
           asset_content_type: application/gzip
-  build-project:
-    name: Build Project
+  build-cosmosdb:
+    name: Build Core Project
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code

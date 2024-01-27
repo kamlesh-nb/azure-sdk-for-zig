@@ -1,9 +1,9 @@
 name: Release Core
-on: [push]
+on: [workflow_dispatch]
 jobs:
   release-core:
     name: Release Core
-    needs: build-project
+    needs: build-core
     runs-on: ubuntu-latest
     steps:
       - name: Create release folder
@@ -35,7 +35,7 @@ jobs:
           asset_path: "github-release/core.tar.gz"
           asset_name: azcore.tar.gz
           asset_content_type: application/gzip
-  build-project:
+  build-core:
     name: Build Project
     runs-on: ubuntu-latest
     steps:
