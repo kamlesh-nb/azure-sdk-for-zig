@@ -60,10 +60,6 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
 
-    tests.root_module.addImport("datetime", b.dependency("datetime", .{
-        .target = target,
-        .optimize = optimize,
-    }).module("datetime"));
 
     tests.root_module.addImport("azcore", b.dependency("azcore", .{
         .target = target,

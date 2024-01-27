@@ -64,7 +64,7 @@ pub fn main() !void {
 
     var container = try db.getContainer("SaleOrder");
     const saleOrder = .{
-        .id = "166",
+        .id = "168",
         .PoNumber = "PO123439186470",
         .OrderDate = "2005-09-12T00:00:00Z",
         .ShippedDate = "2005-07-28T00:00:00Z",
@@ -83,8 +83,8 @@ pub fn main() !void {
     const item = try container.createItem(SaleOrder, saleOrder, saleOrder.id);
     _ = item;
 
-    const items = try container.readItems(SaleOrders);
-    std.debug.print("\nAll Items: {any}\n", .{items});
+    // const items = try container.readItems(SaleOrders);
+    // std.debug.print("\nAll Items: {any}\n", .{items});
     const qry = .{
         .query = "SELECT * FROM SaleOrder s WHERE s.RegionId = @regionId",
         .parameters = .{
