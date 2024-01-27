@@ -3,8 +3,8 @@
     .version = "0.0.1",
     .dependencies = .{
         .azcore = .{
-            .url = "https://github.com/kamlesh-nb/azure-sdk-for-zig/releases/download/20/azcore.tar.gz",
-            .hash = "122015e21ad02adca869b5167952b08ec4c95bcd32c6cccc09910481d74b224beb87",
+            .url = "https://github.com/kamlesh-nb/azure-sdk-for-zig/releases/download/21/azcore.tar.gz",
+            .hash = "12205f175e2272994a5ec807b7ca4310fe9e8805881bbb03f89f8d4ebdedd73967c2",
         },
     },
 
