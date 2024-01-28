@@ -1,26 +1,29 @@
 ## Azure Sdk for Zig
 
 > [!CAUTION]
-> This is an experimental project and just meant to be used for experimenting zig on azure. 
+> This is an experimental project and just meant to be used for experimenting zig on azure.
 
 What's be developed as of now.
+
 - Core Runtime that processes the request for Azure Rest Api's
 - CosmosDb Client, that can;
-    - Create, Get & Delete Database
-    - Create, Get & Delete Container
-    - Create, Read, Update, Delete & Patch Items
+  - Create, Get & Delete Database
+  - Create, Get & Delete Container
+  - Create, Read, Update, Delete & Patch Items
 - If you would like to try CosmosDb Package in Zig, please refer cosmosdb folder sdk/samples or refer below code.
-
 
 Here's a quick sample for connecting to Aziure CosmosDb, creating database, container in the database and an item in the container. You should have CosmosDb Account created in Azure to use below sample.
 
-- Create a Zig executable project 
+- Create a Zig executable project
 
-```zig init```
+```shell
+    zig init
+```
+
 - Fetch CosmosDb package
 
-```
-zig fetch --save https://github.com/kamlesh-nb/azure-sdk-for-zig/releases/download/6/azcosmosdb.tar.gz
+```shell
+    zig fetch --save https://github.com/kamlesh-nb/azure-sdk-for-zig/releases/download/6/azcosmosdb.tar.gz
 ```
 
 ```zig
@@ -73,7 +76,7 @@ pub fn main() !void {
 
     const account = env.get("COSMOSDB_ACCOUNT").?;
     const key = env.get("COSMOSDB_KEY").?;
-    
+
     var client = try CosmosClient.init(&Arena, account, key);
 
     var db = try client.createDatabase("floki");
@@ -102,4 +105,3 @@ pub fn main() !void {
 }
 
 ```
-
