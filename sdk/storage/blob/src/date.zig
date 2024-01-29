@@ -3,7 +3,6 @@ const assert = std.debug.assert;
 const time = std.time;
 const epoch = std.time.epoch;
 
-
 pub const Weekday = enum(u3) {
     Monday = 1,
     Tuesday,
@@ -21,11 +20,11 @@ pub const Weekday = enum(u3) {
             .Thursday => return "Thu",
             .Friday => return "Fri",
             .Saturday => return "Sat",
-            .Sunday=> return "Sun",
+            .Sunday => return "Sun",
         }
     }
 
-     pub fn dayLower(self: Weekday) []const u8 {
+    pub fn dayLower(self: Weekday) []const u8 {
         switch (self) {
             .Monday => return "mon",
             .Tuesday => return "tue",
@@ -33,10 +32,9 @@ pub const Weekday = enum(u3) {
             .Thursday => return "thu",
             .Friday => return "fri",
             .Saturday => return "sat",
-            .Sunday=> return "sun",
+            .Sunday => return "sun",
         }
     }
-
 };
 
 pub const Month = enum(u4) {
@@ -86,7 +84,6 @@ pub const Month = enum(u4) {
             .December => return "dec",
         }
     }
-
 };
 
 const Date = @This();
@@ -101,23 +98,21 @@ minutes: u6 = undefined,
 seconds: u6 = undefined,
 miliseconds: u10 = undefined,
 
-pub fn now() Date {
-    const msepoch =  time.milliTimestamp();
+fn init(msepoch: i64) Date {
     const seconds = @divTrunc(msepoch, 1000);
     const ms = msepoch - (seconds * 1000);
- 
+
     const day_seconds: epoch.DaySeconds = .{
         .secs = @as(u17, @intCast(@mod(seconds, time.s_per_day))),
     };
- 
+
     const epoch_day: epoch.EpochDay = .{
         .day = @as(u47, @intCast(@divTrunc(seconds, epoch.secs_per_day))),
     };
     const year_and_day = epoch_day.calculateYearDay();
     const month_and_day = year_and_day.calculateMonthDay();
- 
 
-     return Date{
+    return Date{
         .day = month_and_day.day_index + 1,
         .month = month_and_day.month.numeric(),
         .year = year_and_day.year,
@@ -131,7 +126,13 @@ pub fn now() Date {
         .minutes = day_seconds.getMinutesIntoHour(),
         .seconds = day_seconds.getSecondsIntoMinute(),
         .miliseconds = @as(u10, @intCast(ms)),
-     };
+    };
+}
+
+pub fn now() Date {
+    // const daysms = days * 24 * 60 * 60 * 1000;
+    const msepoch = time.milliTimestamp();
+    return init(msepoch);
 }
 
 const DAYS_IN_MONTH = [12]u8{ 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
@@ -170,12 +171,36 @@ fn ymd2ord(year: u16, month: u8, day: u8) u32 {
 }
 
 fn toOrdinal(self: Date) u32 {
-        return ymd2ord(self.year, self.month, self.day);
+    return ymd2ord(self.year, self.month, self.day);
 }
 
- fn dayOfWeek(self: Date) Weekday {
-        const dow: u3 = @intCast(self.toOrdinal() % 7);
-        return @enumFromInt(if (dow == 0) 7 else dow);
+fn dayOfWeek(self: Date) Weekday {
+    const dow: u3 = @intCast(self.toOrdinal() % 7);
+    return @enumFromInt(if (dow == 0) 7 else dow);
+}
+
+pub fn addDays(days: i64) Date {
+    const daysms = days * 24 * 60 * 60 * 1000;
+    const msepoch = time.milliTimestamp() + daysms;
+    return init(msepoch);
+}
+
+pub fn minusDays(days: i64) Date {
+    const daysms = days * 24 * 60 * 60 * 1000;
+    const msepoch = time.milliTimestamp() - daysms;
+    return init(msepoch);
+}
+
+pub fn addWeeks(weeks: i64) Date {
+    const weeksms = weeks * 7 * 24 * 60 * 60 * 1000;
+    const msepoch = time.milliTimestamp() + weeksms;
+    return init(msepoch);
+}
+
+pub fn minusWeeks(weeks: i64) Date {
+    const weeksms = weeks * 7 * 24 * 60 * 60 * 1000;
+    const msepoch = time.milliTimestamp() - weeksms;
+    return init(msepoch);
 }
 
 pub fn isoDate(self: *Date, buf: []u8) ![]const u8 {
@@ -209,23 +234,67 @@ pub fn httpDate(self: *Date, buf: []u8) ![]const u8 {
             self.seconds,
             self.miliseconds,
         },
-    );    
-        
+    );
+
     return res[0..res.len];
 }
 
-//Sun, 29 Nov 2015 02:25:35.212 GMT 
+//Sun, 29 Nov 2015 02:25:35.212 GMT
 test "iosDate" {
-    var date =  Date.now();
+    var date = Date.now();
     var iso: [34]u8 = undefined;
     const resIso = try date.isoDate(&iso);
     std.debug.print("\nIso Date: {s}\n", .{resIso});
     var http: [34]u8 = undefined;
     const resHttp = try date.httpDate(&http);
-     std.debug.print("Http Date: {s}\n", .{resHttp});
+    std.debug.print("Http Date: {s}\n", .{resHttp});
 }
 
 test "date" {
     var date = Date.now();
     std.debug.print("\n\n{s}\n\n", .{date.monthName.monthUpper()});
+}
+
+test "addDays" {
+    // var d = Date.now();
+    var date = Date.addDays(12);
+    var iso: [34]u8 = undefined;
+    const resIso = try date.isoDate(&iso);
+    std.debug.print("\nIso Date: {s}\n", .{resIso});
+    var http: [34]u8 = undefined;
+    const resHttp = try date.httpDate(&http);
+    std.debug.print("Http Date: {s}\n", .{resHttp});
+}
+
+test "minusDays" {
+    // var d = Date.now();
+    var date = Date.minusDays(12);
+    var iso: [34]u8 = undefined;
+    const resIso = try date.isoDate(&iso);
+    std.debug.print("\nIso Date: {s}\n", .{resIso});
+    var http: [34]u8 = undefined;
+    const resHttp = try date.httpDate(&http);
+    std.debug.print("Http Date: {s}\n", .{resHttp});
+}
+
+test "addWeeks" {
+    // var d = Date.now();
+    var date = Date.addWeeks(12);
+    var iso: [34]u8 = undefined;
+    const resIso = try date.isoDate(&iso);
+    std.debug.print("\nIso Date: {s}\n", .{resIso});
+    var http: [34]u8 = undefined;
+    const resHttp = try date.httpDate(&http);
+    std.debug.print("Http Date: {s}\n", .{resHttp});
+}
+
+test "minusWeeks" {
+    // var d = Date.now();
+    var date = Date.minusWeeks(15);
+    var iso: [34]u8 = undefined;
+    const resIso = try date.isoDate(&iso);
+    std.debug.print("\nIso Date: {s}\n", .{resIso});
+    var http: [34]u8 = undefined;
+    const resHttp = try date.httpDate(&http);
+    std.debug.print("Http Date: {s}\n", .{resHttp});
 }
