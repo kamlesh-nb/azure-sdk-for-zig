@@ -6,7 +6,7 @@ const RequestDatePolicy = core.RequestDatePolicy;
 const AuthorizationPolicy = core.AuthorizationPolicy;
 
 const Policy = core.Policy;
-const Array = std.ArrayList(Policy);
+
 const Pipleline = core.Pipeline;
 const ClientOptions = core.ClientOptions;
 const E = @import("enums.zig");
