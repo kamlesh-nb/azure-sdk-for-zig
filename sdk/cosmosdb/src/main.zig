@@ -10,6 +10,7 @@ const Parameter = @import("resources/query.zig").Parameter;
 
 const CosmosClient = @import("cosmos.zig");
 const Database = @import("database.zig");
+const ApiError = @import("container.zig").ApiError;
 
 const Item = struct {
     OrderQty: i32,
@@ -19,17 +20,17 @@ const Item = struct {
 };
 
 pub const SaleOrder = struct {
-    id: []const u8,
-    PoNumber: []const u8,
-    OrderDate: []const u8,
-    ShippedDate: []const u8,
-    AccountNumber: []const u8,
-    RegionId: []const u8,
-    SubTotal: f64,
-    TaxAmount: f64,
-    Freight: f64,
-    TotalDue: f64,
-    Items: []Item,
+    id: []const u8 = undefined,
+    PoNumber: []const u8 = undefined,
+    OrderDate: []const u8 = undefined,
+    ShippedDate: []const u8 = undefined,
+    AccountNumber: []const u8 = undefined,
+    RegionId: []const u8 = undefined,
+    SubTotal: f64 = undefined,
+    TaxAmount: f64 = undefined,
+    Freight: f64 = undefined,
+    TotalDue: f64 = undefined,
+    Items: []Item = undefined,
     _rid: []const u8 = undefined,
     _self: []const u8 = undefined,
     _etag: []const u8 = undefined,
@@ -64,7 +65,7 @@ pub fn main() !void {
 
     var container = try db.getContainer("SaleOrder");
     const saleOrder = .{
-        .id = "168",
+        .id = "468",
         .PoNumber = "PO123439186470",
         .OrderDate = "2005-09-12T00:00:00Z",
         .ShippedDate = "2005-07-28T00:00:00Z",
@@ -80,20 +81,23 @@ pub fn main() !void {
         },
     };
 
-    const item = try container.createItem(SaleOrder, saleOrder, saleOrder.id);
-    _ = item;
-
+    const item = try container.createItem(SaleOrder, ApiError, saleOrder, saleOrder.id);
+    if (!item.hasErrors()) {
+        std.debug.print("\nItem Created: {any}\n", .{item.value});
+    } else {
+        std.debug.print("\nError: {s}\n", .{item.getErrors()});
+    }
     // const items = try container.readItems(SaleOrders);
     // std.debug.print("\nAll Items: {any}\n", .{items});
-    const qry = .{
-        .query = "SELECT * FROM SaleOrder s WHERE s.RegionId = @regionId",
-        .parameters = .{
-            .{ .name = "@regionId", .value = "WA" },
-        },
-    };
+    // const qry = .{
+    //     .query = "SELECT * FROM SaleOrder s WHERE s.RegionId = @regionId",
+    //     .parameters = .{
+    //         .{ .name = "@regionId", .value = "WA" },
+    //     },
+    // };
 
-    const result = try container.queryItems(SaleOrders, qry);
-    std.debug.print("\nQuery Results: \n{any}\n", .{result});
+    // const result = try container.queryItems(SaleOrders, qry);
+    // std.debug.print("\nQuery Results: \n{any}\n", .{result});
 
     // var doc = result.Documents[0];
     // doc.ShippedDate = "2005-12-21T00:00:00Z";
@@ -104,9 +108,9 @@ pub fn main() !void {
     // try container.deleteItem("248", "248");
 
     // const so = container.readItem(SaleOrder, "253", "153");
-    if (container.readItem(SaleOrder, "153", "153")) |so| {
-        std.debug.print("\nItem Read: {any}\n", .{so});
-    } else |err| {
-        std.debug.print("\nError: {any}\n", .{err});
-    }
+    // if (container.readItem(SaleOrder, "153", "153")) |so| {
+    //     std.debug.print("\nItem Read: {any}\n", .{so});
+    // } else |err| {
+    //     std.debug.print("\nError: {any}\n", .{err});
+    // }
 }

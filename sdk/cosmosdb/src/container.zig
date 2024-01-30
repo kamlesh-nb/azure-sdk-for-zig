@@ -19,13 +19,32 @@ const Response = core.Response;
 const Method = core.Method;
 const Version = core.Version;
 
+pub const ApiError = struct {
+    status: bool = false,
+    message: []const u8 = undefined,
+};
+
+pub fn Result(comptime T: type, comptime R: type) type {
+    return struct {
+        const Self = @This();
+        value: T,
+        errors: R,
+        pub fn hasErrors(self: Self) bool {
+            return !self.errors.status;
+        }
+        pub fn getErrors(self: Self) []const u8 {
+            return self.errors.message;
+        }
+    };
+}
+
 const Container = @This();
 
 client: *CosmosClient,
 db: *Database,
 container: ContainerResponse,
 
-pub fn createItem(self: *Container, comptime T: type, payload: anytype, partitionKey: []const u8) anyerror!T {
+pub fn createItem(self: *Container, comptime T: type, comptime R: type, payload: anytype, partitionKey: []const u8) anyerror!Result(T, R) {
     var resourceType: [2048]u8 = undefined;
     const rt = try std.fmt.bufPrint(&resourceType, "/dbs/{s}/colls/{s}/docs", .{ self.db.db.id, self.container.id });
 
@@ -52,25 +71,45 @@ pub fn createItem(self: *Container, comptime T: type, payload: anytype, partitio
 
     switch (response.parts.status) {
         .ok, .created => {
-            return try response.body.get(self.client.allocator, T);
-        },
-        .bad_request => {
-            std.log.err("\nError:\n{s}\n", .{response.body.buffer.str()});
-            return error.BadRequest;
-        },
-        .forbidden => {
-            std.log.err("\nError:\n{s}\n", .{response.body.buffer.str()});
-            return error.Forbidden;
-        },
-        .conflict => {
-            std.log.err("\nError:\n{s}\n", .{response.body.buffer.str()});
-            return error.ItemAlreadyExists;
+            return Result(T, R){
+                .value = try response.body.get(self.client.allocator, T),
+                .errors = .{
+                    .status = true,
+                    .message = "Success",
+                },
+            };
         },
         else => {
-            std.log.err("\nError:\n{s}\n", .{response.body.buffer.str()});
-            return error.UnknownError;
+            return Result(T, R){
+                .value = .{},
+                .errors = .{
+                    .status = false,
+                    .message = response.body.buffer.str(),
+                },
+            };
         },
     }
+    // switch (response.parts.status) {
+    //     .ok, .created => {
+    //         return try response.body.get(self.client.allocator, T);
+    //     },
+    //     .bad_request => {
+    //         std.log.err("\nError:\n{s}\n", .{response.body.buffer.str()});
+    //         return error.BadRequest;
+    //     },
+    //     .forbidden => {
+    //         std.log.err("\nError:\n{s}\n", .{response.body.buffer.str()});
+    //         return error.Forbidden;
+    //     },
+    //     .conflict => {
+    //         std.log.err("\nError:\n{s}\n", .{response.body.buffer.str()});
+    //         return error.ItemAlreadyExists;
+    //     },
+    //     else => {
+    //         std.log.err("\nError:\n{s}\n", .{response.body.buffer.str()});
+    //         return error.UnknownError;
+    //     },
+    // }
 }
 
 pub fn readItem(self: *Container, comptime T: type, item_id: []const u8, partitionKey: []const u8) anyerror!T {

@@ -327,7 +327,7 @@ fn send(comptime T: type) type {
         .name = "test",
     };
     _ = entity;
-    return Result(T, .{}, ApiError, ApiError.NotFound);
+    return Result(T, .{}, ApiError, ApiError.Ok);
 
 }
 
