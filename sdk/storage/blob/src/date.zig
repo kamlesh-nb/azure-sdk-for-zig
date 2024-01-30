@@ -298,3 +298,46 @@ test "minusWeeks" {
     const resHttp = try date.httpDate(&http);
     std.debug.print("Http Date: {s}\n", .{resHttp});
 }
+
+const ApiError = enum(u8) {
+    Ok,
+    NotFound,
+    BadRequest,
+    InternalServerError,
+};
+
+ 
+
+fn Result(comptime T: type, comptime payload: T,comptime E: type, comptime err: E) type {
+   return  struct {
+        Ok: T = payload,
+        Err: ApiError = err,
+        const Self = @This();
+        pub fn hasErrors(self: Self) bool {
+            return self.Err != ApiError.Ok;
+        }
+    };
+   
+}
+
+
+fn send(comptime T: type) type {
+    const entity = Entity{
+        .id = 1,
+        .name = "test",
+    };
+    _ = entity;
+    return Result(T, .{}, ApiError, ApiError.NotFound);
+
+}
+
+const Entity = struct {
+    id: u64 = undefined,
+    name: []const u8 = undefined,
+};
+test "result" {
+    
+    const res = send(Entity);
+    const r = res{};
+    std.debug.print("\nasd\n\n{any}, {any}\nasd\n\n", .{r.hasErrors(), r.Err});
+}
