@@ -11,6 +11,8 @@ const Pipleline = core.Pipeline;
 const ClientOptions = core.ClientOptions;
 const E = @import("enums.zig");
 const CosmosErrors = @import("errors.zig").CosmosErrors;
+const hasError = @import("errors.zig").hasError;
+
 const ResourceType = E.ResourceType;
 const Authorization = @import("authorization.zig");
 const Database = @import("database.zig");
@@ -20,6 +22,11 @@ const Request = core.Request;
 const Response = core.Response;
 const Method = core.Method;
 const Version = core.Version;
+const Status = core.Status;
+
+const Result = core.Result;
+const Opaque = core.Opaque;
+const ApiError = core.ApiError;
 
 pub const Databases = struct {
     _rid: []const u8,
@@ -85,7 +92,7 @@ fn authToken(client: *CosmosClient, verb: Method, resourceType: ResourceType, re
     try client.authorization.genAuthSig(verb, resourceType, resourceLink, client.key);
 }
 
-pub fn getDatabase(client: *CosmosClient, id: []const u8) anyerror!Database {
+pub fn getDatabase(client: *CosmosClient, id: []const u8) anyerror!Result(Database) {
     var resource: [2048]u8 = undefined;
     const r = try std.fmt.bufPrint(&resource, "/dbs/{s}", .{id});
     try client.reinitPipeline();
@@ -94,23 +101,26 @@ pub fn getDatabase(client: *CosmosClient, id: []const u8) anyerror!Database {
 
     client.pipeline.?.deinit();
 
-    switch (response.parts.status) {
-        .ok => {
-            const db = try response.body.get(client.allocator, DatabaseResponse);
-            return Database{ .client = client, .db = db };
-        },
-        .not_found => {
-            std.log.err("\nError:\n{s}\n", .{response.body.buffer.str()});
-            return error.DatabaseNotFound;
-        },
-        else => {
-            std.log.err("\nError:\n{s}\n", .{response.body.buffer.str()});
-            return error.UnknownError;
-        },
+    if(!hasError(request.parts.method, response.parts.status)) {
+           return Result(Database){ 
+                .value = Database{ .client = client, .db  = try response.body.get(client.allocator, DatabaseResponse) },
+                .errors = null,
+            };
+    } else {
+        return Result(Database){ 
+            .value = null,
+            .errors = .{
+                .status = @intFromEnum(response.parts.status),
+                .errorCode = response.parts.status.toString(),
+                .rawResponse = response.body.buffer.str(),
+            },
+         };
     }
+
+    
 }
 
-pub fn createDatabase(client: *CosmosClient, id: []const u8) anyerror!Database {
+pub fn createDatabase(client: *CosmosClient, id: []const u8) anyerror!Result(Database) {
     const payload = .{ .id = id };
     const r = "/dbs";
     try client.reinitPipeline();
@@ -128,28 +138,22 @@ pub fn createDatabase(client: *CosmosClient, id: []const u8) anyerror!Database {
 
     client.pipeline.?.deinit();
 
-    switch (response.parts.status) {
-        .ok, .created => {
-            const db = try response.body.get(client.allocator, DatabaseResponse);
-            return Database{ .client = client, .db = db };
-        },
-        .bad_request => {
-            std.log.err("\nError:\n{s}\n", .{response.body.buffer.str()});
-            return error.BadRequest;
-        },
-        .conflict => {
-            std.log.err("\nError:\n{s}\n", .{response.body.buffer.str()});
-            return error.DatabaseAlreadyExists;
-        },
-        .unauthorized => {
-            std.log.err("\nError:\n{s}\n", .{response.body.buffer.str()});
-            return error.Unauthorized;
-        },
-        else => {
-            std.log.err("\nError:\n{s}\n", .{response.body.buffer.str()});
-            return error.UnknownError;
-        },
+   if(!hasError(request.parts.method, response.parts.status)) {
+           return Result(Database){ 
+                .value = Database{ .client = client, .db  = try response.body.get(client.allocator, DatabaseResponse) },
+                .errors = null,
+            };
+    } else {
+        return Result(Database){ 
+            .value = null,
+            .errors = .{
+                .status = @intFromEnum(response.parts.status),
+                .errorCode = response.parts.status.toString(),
+                .rawResponse = response.body.buffer.str(),
+            },
+         };
     }
+
 }
 
 pub fn createRequest(client: *CosmosClient, path: []const u8, verb: Method, version: Version) !Request {

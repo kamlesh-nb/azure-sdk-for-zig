@@ -5,7 +5,7 @@ const E = @import("enums.zig");
 const ResourceType = E.ResourceType;
 const Query = @import("resources/query.zig").Query;
 const ContainerResponse = @import("resources/container.zig").ContainerResponse;
-
+const hasError = @import("errors.zig").hasError;
 const PartitionKeyPolicy = @import("policies/partition_key_policy.zig");
 const ThroughputPolicy = @import("policies/throughput_policy.zig");
 const MaxItemPolicy = @import("policies/max_item_policy.zig");
@@ -18,25 +18,11 @@ const Request = core.Request;
 const Response = core.Response;
 const Method = core.Method;
 const Version = core.Version;
+const Status = core.Status;
 
-pub const ApiError = struct {
-    status: bool = false,
-    message: []const u8 = undefined,
-};
-
-pub fn Result(comptime T: type, comptime R: type) type {
-    return struct {
-        const Self = @This();
-        value: T,
-        errors: R,
-        pub fn hasErrors(self: Self) bool {
-            return !self.errors.status;
-        }
-        pub fn getErrors(self: Self) []const u8 {
-            return self.errors.message;
-        }
-    };
-}
+const Result = core.Result;
+const Opaque = core.Opaque;
+const ApiError = core.ApiError;
 
 const Container = @This();
 
@@ -44,7 +30,27 @@ client: *CosmosClient,
 db: *Database,
 container: ContainerResponse,
 
-pub fn createItem(self: *Container, comptime T: type, comptime R: type, payload: anytype, partitionKey: []const u8) anyerror!Result(T, R) {
+
+
+fn itemResponse(self: *Container, hasErr: bool, response: *Response, comptime T: type) anyerror!Result(T) {
+    if (hasErr) {
+        return Result(T){
+            .value = null,
+            .errors = .{
+                .status = @intFromEnum(response.parts.status),
+                .errorCode = response.parts.status.toString(),
+                .rawResponse = response.body.buffer.str(),
+            },
+        };
+    } else {
+        return Result(T){
+            .value = if (response.body.buffer.size > 0) try response.body.get(self.client.allocator, T) else null,
+            .errors = null,
+        };
+    }
+}
+
+pub fn createItem(self: *Container, comptime T: type, payload: anytype, partitionKey: []const u8) anyerror!Result(T) {
     var resourceType: [2048]u8 = undefined;
     const rt = try std.fmt.bufPrint(&resourceType, "/dbs/{s}/colls/{s}/docs", .{ self.db.db.id, self.container.id });
 
@@ -69,50 +75,10 @@ pub fn createItem(self: *Container, comptime T: type, comptime R: type, payload:
 
     self.client.pipeline.?.deinit();
 
-    switch (response.parts.status) {
-        .ok, .created => {
-            return Result(T, R){
-                .value = try response.body.get(self.client.allocator, T),
-                .errors = .{
-                    .status = true,
-                    .message = "Success",
-                },
-            };
-        },
-        else => {
-            return Result(T, R){
-                .value = .{},
-                .errors = .{
-                    .status = false,
-                    .message = response.body.buffer.str(),
-                },
-            };
-        },
-    }
-    // switch (response.parts.status) {
-    //     .ok, .created => {
-    //         return try response.body.get(self.client.allocator, T);
-    //     },
-    //     .bad_request => {
-    //         std.log.err("\nError:\n{s}\n", .{response.body.buffer.str()});
-    //         return error.BadRequest;
-    //     },
-    //     .forbidden => {
-    //         std.log.err("\nError:\n{s}\n", .{response.body.buffer.str()});
-    //         return error.Forbidden;
-    //     },
-    //     .conflict => {
-    //         std.log.err("\nError:\n{s}\n", .{response.body.buffer.str()});
-    //         return error.ItemAlreadyExists;
-    //     },
-    //     else => {
-    //         std.log.err("\nError:\n{s}\n", .{response.body.buffer.str()});
-    //         return error.UnknownError;
-    //     },
-    // }
+    return self.itemResponse(hasError(request.parts.method, response.parts.status), &response, T);
 }
 
-pub fn readItem(self: *Container, comptime T: type, item_id: []const u8, partitionKey: []const u8) anyerror!T {
+pub fn readItem(self: *Container, comptime T: type, item_id: []const u8, partitionKey: []const u8) anyerror!Result(T) {
     var resourceType: [2048]u8 = undefined;
     const rt = try std.fmt.bufPrint(&resourceType, "/dbs/{s}/colls/{s}/docs/{s}", .{ self.db.db.id, self.container.id, item_id });
 
@@ -135,30 +101,10 @@ pub fn readItem(self: *Container, comptime T: type, item_id: []const u8, partiti
 
     self.client.pipeline.?.deinit();
 
-    switch (response.parts.status) {
-        .ok => {
-            return try response.body.get(self.client.allocator, T);
-        },
-        .not_found => {
-            std.log.err("\nError:\n{s}\n", .{response.body.buffer.str()});
-            return error.ItemNotFound;
-        },
-        .bad_request => {
-            std.log.err("\nError:\n{s}\n", .{response.body.buffer.str()});
-            return error.BadRequest;
-        },
-        .not_modified => {
-            std.log.err("\nError:\n{s}\n", .{response.body.buffer.str()});
-            return error.ItemAlreadyExists;
-        },
-        else => {
-            std.log.err("\nError:\n{s}\n", .{response.body.buffer.str()});
-            return error.UnknownError;
-        },
-    }
+    return self.itemResponse(hasError(request.parts.method, response.parts.status), &response, T);
 }
 
-pub fn updateItem(self: *Container, comptime T: type, payload: T, id: []const u8, partitionKey: []const u8) anyerror!T {
+pub fn updateItem(self: *Container, comptime T: type, payload: T, id: []const u8, partitionKey: []const u8) anyerror!Result(T) {
     var resourceType: [2048]u8 = undefined;
     const rt = try std.fmt.bufPrint(&resourceType, "/dbs/{s}/colls/{s}/docs/{s}", .{ self.db.db.id, self.container.id, id });
 
@@ -183,30 +129,10 @@ pub fn updateItem(self: *Container, comptime T: type, payload: T, id: []const u8
 
     self.client.pipeline.?.deinit();
 
-    switch (response.parts.status) {
-        .ok => {
-            return try response.body.get(self.client.allocator, T);
-        },
-        .entity_too_large => {
-            std.log.err("\nError:\n{s}\n", .{response.body.buffer.str()});
-            return error.EntityTooLarge;
-        },
-        .bad_request => {
-            std.log.err("\nError:\n{s}\n", .{response.body.buffer.str()});
-            return error.BadRequest;
-        },
-        .not_found => {
-            std.log.err("\nError:\n{s}\n", .{response.body.buffer.str()});
-            return error.ContainerNotFound;
-        },
-        else => {
-            std.log.err("\nError:\n{s}\n", .{response.body.buffer.str()});
-            return error.UnknownError;
-        },
-    }
+    return itemResponse(hasError(request.parts.method, response.parts.status), self.client.allocator, &response, T);
 }
 
-pub fn deleteItem(self: *Container, id: []const u8, partitionKey: []const u8) !void {
+pub fn deleteItem(self: *Container, id: []const u8, partitionKey: []const u8) !Result(Opaque) {
     var resourceType: [2048]u8 = undefined;
     const rt = try std.fmt.bufPrint(&resourceType, "/dbs/{s}/colls/{s}/docs/{s}", .{ self.db.db.id, self.container.id, id });
 
@@ -224,19 +150,7 @@ pub fn deleteItem(self: *Container, id: []const u8, partitionKey: []const u8) !v
 
     self.client.pipeline.?.deinit();
 
-    switch (response.parts.status) {
-        .ok, .no_content, .accepted => {
-            return;
-        },
-        .not_found => {
-            std.log.err("\nError:\n{s}\n", .{response.body.buffer.str()});
-            return error.ContainerNotFound;
-        },
-        else => {
-            std.log.err("\nError:\n{s}\n", .{response.body.buffer.str()});
-            return error.UnknownError;
-        },
-    }
+    return self.itemResponse(hasError(request.parts.method, response.parts.status), &response, Opaque);
 }
 
 pub fn queryItems(self: *Container, comptime T: type, query: anytype) !T {
@@ -272,19 +186,7 @@ pub fn queryItems(self: *Container, comptime T: type, query: anytype) !T {
 
     self.client.pipeline.?.deinit();
 
-    switch (response.parts.status) {
-        .ok, .no_content, .accepted => {
-            return try response.body.get(self.client.allocator, T);
-        },
-        .bad_request => {
-            std.log.err("\nError:\n{s}\n", .{response.body.buffer.str()});
-            return error.BadRequest;
-        },
-        else => {
-            std.log.err("\nError:\n{s}\n", .{response.body.buffer.str()});
-            return error.UnknownError;
-        },
-    }
+    return self.itemResponse(hasError(request.parts.method, response.parts.status), &response, T);
 }
 
 pub fn patchItem(self: *Container, comptime T: type, id: []const u8, partitionKey: []const u8, patch: anytype) !T {
@@ -314,17 +216,5 @@ pub fn patchItem(self: *Container, comptime T: type, id: []const u8, partitionKe
 
     self.client.pipeline.?.deinit();
 
-    switch (response.parts.status) {
-        .ok, .no_content, .accepted => {
-            return try response.body.get(self.client.allocator, T);
-        },
-        .bad_request => {
-            std.log.err("\nError:\n{s}\n", .{response.body.buffer.str()});
-            return error.BadRequest;
-        },
-        else => {
-            std.log.err("\nError:\n{s}\n", .{response.body.buffer.str()});
-            return error.UnknownError;
-        },
-    }
+    return self.itemResponse(hasError(request.parts.method, response.parts.status), &response, T);
 }

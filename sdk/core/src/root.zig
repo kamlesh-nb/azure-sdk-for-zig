@@ -13,3 +13,7 @@ pub const Version = http.Version;
 pub const Status = http.Status;
 pub const Buffer = http.Buffer;
 pub const Date = @import("datetime");
+
+pub const ApiError = @import("api_error.zig").ApiError;
+pub const Result = @import("api_error.zig").Result;
+pub const Opaque = @import("api_error.zig").Opaque;

@@ -10,7 +10,7 @@ const Parameter = @import("resources/query.zig").Parameter;
 
 const CosmosClient = @import("cosmos.zig");
 const Database = @import("database.zig");
-const ApiError = @import("container.zig").ApiError;
+const Container = @import("container.zig");
 
 const Item = struct {
     OrderQty: i32,
@@ -58,12 +58,30 @@ pub fn main() !void {
     // const db = try client.createDatabase("floki");
 
     var db = try client.getDatabase("floki");
+
+    if (db.errors) |err|  {
+        std.debug.print("\nDatabase: {s}\n", .{err.errorCode});
+        return;
+    }
+
     // _ = try db.createContainer("SaleOrder", "/id");
     // std.debug.print("\nParsed: {any}\n", .{db.db.id});
     // try db.deleteContainer("SaleOrder");
     // const cont = try db.createContainer("SaleOrder", "/id");
 
-    var container = try db.getContainer("SaleOrder");
+    var con = try db.value.?.getContainer("SaleOrder");
+
+    if (con.errors) |err| {
+        std.debug.print("\nContainer Error: {s}\n", .{err.errorCode});
+        return;
+    }
+    const so = try con.value.?.readItem(SaleOrder, "1148", "148");
+    if (so.value) |v| {
+        std.debug.print("\nItem Read: {any}\n", .{v});
+    } else {
+        std.debug.print("\nItem Error: {s}\n", .{so.errors.?.rawResponse});
+    }
+
     const saleOrder = .{
         .id = "468",
         .PoNumber = "PO123439186470",
@@ -80,13 +98,14 @@ pub fn main() !void {
             .{ .OrderQty = 1, .ProductId = 2, .UnitPrice = 219.4589, .LineTotal = 219.4589 },
         },
     };
+    _ = saleOrder;
 
-    const item = try container.createItem(SaleOrder, ApiError, saleOrder, saleOrder.id);
-    if (!item.hasErrors()) {
-        std.debug.print("\nItem Created: {any}\n", .{item.value});
-    } else {
-        std.debug.print("\nError: {s}\n", .{item.getErrors()});
-    }
+    // const item = try container.createItem(SaleOrder, saleOrder, saleOrder.id);
+    // if (item.value) | doc |{
+    //     std.debug.print("\nItem Created: {any}\n", .{doc});
+    // } else {
+    //     std.debug.print("\nError: {s}\n", .{item.errors.?.errorCode});
+    // }
     // const items = try container.readItems(SaleOrders);
     // std.debug.print("\nAll Items: {any}\n", .{items});
     // const qry = .{
@@ -105,12 +124,10 @@ pub fn main() !void {
     // const upd = try container.updateItem(SaleOrder, doc, doc.id, doc.id);
     // std.debug.print("\nParsed: {any}\n", .{upd});
 
-    // try container.deleteItem("248", "248");
+    // const result = try container.deleteItem("368", "368");
 
-    // const so = container.readItem(SaleOrder, "253", "153");
-    // if (container.readItem(SaleOrder, "153", "153")) |so| {
-    //     std.debug.print("\nItem Read: {any}\n", .{so});
-    // } else |err| {
-    //     std.debug.print("\nError: {any}\n", .{err});
+    // if (result.errors) |err| {
+    //     std.debug.print("\nError: {s}\n", .{err.errorCode});
     // }
+
 }
