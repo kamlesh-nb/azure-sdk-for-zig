@@ -75,7 +75,7 @@ pub fn main() !void {
         std.debug.print("\nContainer Error: {s}\n", .{err.errorCode});
         return;
     }
-    const so = try con.value.?.readItem(SaleOrder, "1148", "148");
+    const so = try con.value.?.readItem(SaleOrder, "148", "148");
     if (so.value) |v| {
         std.debug.print("\nItem Read: {any}\n", .{v});
     } else {

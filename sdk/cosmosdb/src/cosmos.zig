@@ -101,23 +101,21 @@ pub fn getDatabase(client: *CosmosClient, id: []const u8) anyerror!Result(Databa
 
     client.pipeline.?.deinit();
 
-    if(!hasError(request.parts.method, response.parts.status)) {
-           return Result(Database){ 
-                .value = Database{ .client = client, .db  = try response.body.get(client.allocator, DatabaseResponse) },
-                .errors = null,
-            };
+    if (!hasError(request.parts.method, response.parts.status)) {
+        return Result(Database){
+            .value = Database{ .client = client, .db = try response.body.get(client.allocator, DatabaseResponse) },
+            .errors = null,
+        };
     } else {
-        return Result(Database){ 
+        return Result(Database){
             .value = null,
             .errors = .{
                 .status = @intFromEnum(response.parts.status),
                 .errorCode = response.parts.status.toString(),
                 .rawResponse = response.body.buffer.str(),
             },
-         };
+        };
     }
-
-    
 }
 
 pub fn createDatabase(client: *CosmosClient, id: []const u8) anyerror!Result(Database) {
@@ -138,22 +136,21 @@ pub fn createDatabase(client: *CosmosClient, id: []const u8) anyerror!Result(Dat
 
     client.pipeline.?.deinit();
 
-   if(!hasError(request.parts.method, response.parts.status)) {
-           return Result(Database){ 
-                .value = Database{ .client = client, .db  = try response.body.get(client.allocator, DatabaseResponse) },
-                .errors = null,
-            };
+    if (!hasError(request.parts.method, response.parts.status)) {
+        return Result(Database){
+            .value = Database{ .client = client, .db = try response.body.get(client.allocator, DatabaseResponse) },
+            .errors = null,
+        };
     } else {
-        return Result(Database){ 
+        return Result(Database){
             .value = null,
             .errors = .{
                 .status = @intFromEnum(response.parts.status),
                 .errorCode = response.parts.status.toString(),
                 .rawResponse = response.body.buffer.str(),
             },
-         };
+        };
     }
-
 }
 
 pub fn createRequest(client: *CosmosClient, path: []const u8, verb: Method, version: Version) !Request {
