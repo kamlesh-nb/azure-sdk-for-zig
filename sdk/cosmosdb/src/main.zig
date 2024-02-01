@@ -7,8 +7,10 @@ const Request = http.Request;
 const Response = http.Response;
 const Query = @import("resources/query.zig").Query;
 const Parameter = @import("resources/query.zig").Parameter;
-const  core = @import("azcore");
+const core = @import("azcore");
 const IsoDate = core.IsoDate;
+const Uuid = core.Uuid;
+
 const CosmosClient = @import("cosmos.zig");
 const Database = @import("database.zig");
 const Container = @import("container.zig");
@@ -56,42 +58,49 @@ pub fn main() !void {
     const account = env.get("COSMOSDB_ACCOUNT").?;
     const key = env.get("COSMOSDB_KEY").?;
     var client = try CosmosClient.init(&Arena, account, key);
-    var db = try client.createDatabase("floki");
+    // var db = try client.createDatabase("floki");
 
-    // var db = try client.getDatabase("floki");
+    var db = try client.getDatabase("floki");
 
-    if (db.errors) |err|  {
+    if (db.errors) |err| {
         std.debug.print("\nDatabase: {s}\n", .{err.rawResponse});
         return;
     }
 
-    var con = try db.value.?.createContainer("SaleOrder", "/id");
+    // var con = try db.value.?.createContainer("SaleOrder", "/id");
     // std.debug.print("\nParsed: {any}\n", .{db.db.id});
     // try db.deleteContainer("SaleOrder");
     // const cont = try db.createContainer("SaleOrder", "/id");
 
-    // var con = try db.value.?.getContainer("SaleOrder");
+    var con = try db.value.?.getContainer("SaleOrder");
 
     if (con.errors) |err| {
         std.debug.print("\nContainer Error: {s}\n", .{err.errorCode});
         return;
     }
-    const so = try con.value.?.readItem(SaleOrder, "148", "148");
+    const so = try con.value.?.readItem(SaleOrder, "629e34962898482f", "629e34962898482f");
     if (so.value) |v| {
         std.debug.print("\nItem Read: {any}\n", .{v});
     } else {
-        std.debug.print("\nItem Error: {s}\n", .{so.errors.?.rawResponse});
+        std.debug.print("\nItem Error: {s}\n", .{so.errors.?.errorCode});
     }
-    var d:[33]u8 = undefined;
-    var t:[33]u8 = undefined;
+    var d: [33]u8 = undefined;
+    var t: [33]u8 = undefined;
     var date = IsoDate.now();
     var shipDate = IsoDate.addDays(12);
-    const saleOrder = .{
-        .id =  "202",
-        .PoNumber = "PO2022",
+    var id: [16:0]u8 = undefined;
+    var po: [16:0]u8 = undefined;
+    var ac: [16:0]u8 = undefined;
+    Uuid.docId(&id);
+    Uuid.docId(&po);
+    Uuid.docId(&ac);
+
+    var saleOrder = .{
+        .id =  id,
+        .PoNumber = po,
         .OrderDate = try date.isoDate(&d),
         .ShippedDate = try shipDate.isoDate(&t),
-        .AccountNumber ="AC-302311-023",
+        .AccountNumber = ac,
         .RegionId = "SE",
         .SubTotal = 1219.4589,
         .TaxAmount = 122.5838,
@@ -103,9 +112,10 @@ pub fn main() !void {
         },
     };
 
-    const item = try con.value.?.createItem(SaleOrder, saleOrder, saleOrder.id);
-    if (item.value) | doc |{
-        std.debug.print("\nItem Created: {any}\n", .{doc});
+
+    const item = try con.value.?.createItem(SaleOrder, saleOrder, &saleOrder.id);
+    if (item.value) |doc| {
+        std.debug.print("\nItem Created: id = {s}\n", .{doc.id});
     } else {
         std.debug.print("\nError: {s}\n", .{item.errors.?.errorCode});
     }
