@@ -86,7 +86,7 @@ pub const Month = enum(u4) {
     }
 };
 
-const Date = @This();
+const IsoDate = @This();
 
 day: u8 = 0,
 month: u8 = 0,
@@ -98,7 +98,7 @@ minutes: u6 = undefined,
 seconds: u6 = undefined,
 miliseconds: u10 = undefined,
 
-fn init(msepoch: i64) Date {
+fn init(msepoch: i64) IsoDate {
     const seconds = @divTrunc(msepoch, 1000);
     const ms = msepoch - (seconds * 1000);
 
@@ -112,7 +112,7 @@ fn init(msepoch: i64) Date {
     const year_and_day = epoch_day.calculateYearDay();
     const month_and_day = year_and_day.calculateMonthDay();
 
-    return Date{
+    return IsoDate{
         .day = month_and_day.day_index + 1,
         .month = month_and_day.month.numeric(),
         .year = year_and_day.year,
@@ -129,8 +129,7 @@ fn init(msepoch: i64) Date {
     };
 }
 
-pub fn now() Date {
-    // const daysms = days * 24 * 60 * 60 * 1000;
+pub fn now() IsoDate {
     const msepoch = time.milliTimestamp();
     return init(msepoch);
 }
@@ -170,40 +169,41 @@ fn ymd2ord(year: u16, month: u8, day: u8) u32 {
     return daysBeforeYear(year) + daysBeforeMonth(year, month) + day;
 }
 
-fn toOrdinal(self: Date) u32 {
+fn toOrdinal(self: IsoDate) u32 {
     return ymd2ord(self.year, self.month, self.day);
 }
 
-fn dayOfWeek(self: Date) Weekday {
+fn dayOfWeek(self: IsoDate) Weekday {
     const dow: u3 = @intCast(self.toOrdinal() % 7);
     return @enumFromInt(if (dow == 0) 7 else dow);
 }
 
-pub fn addDays(days: i64) Date {
+pub fn addDays(days: i64) IsoDate {
     const daysms = days * 24 * 60 * 60 * 1000;
     const msepoch = time.milliTimestamp() + daysms;
     return init(msepoch);
 }
 
-pub fn minusDays(days: i64) Date {
+pub fn minusDays(days: i64) IsoDate {
     const daysms = days * 24 * 60 * 60 * 1000;
     const msepoch = time.milliTimestamp() - daysms;
     return init(msepoch);
 }
 
-pub fn addWeeks(weeks: i64) Date {
+pub fn addWeeks(weeks: i64) IsoDate {
     const weeksms = weeks * 7 * 24 * 60 * 60 * 1000;
     const msepoch = time.milliTimestamp() + weeksms;
     return init(msepoch);
 }
 
-pub fn minusWeeks(weeks: i64) Date {
+pub fn minusWeeks(weeks: i64) IsoDate {
     const weeksms = weeks * 7 * 24 * 60 * 60 * 1000;
     const msepoch = time.milliTimestamp() - weeksms;
     return init(msepoch);
 }
 
-pub fn isoDate(self: *Date, buf: []u8) ![]const u8 {
+pub fn isoDate(self: *IsoDate, buf: []u8) ![]const u8 {
+    
     const res = try std.fmt.bufPrint(
         buf,
         "{d:0>4}-{d:0>2}-{d:0>2}T{d:0>2}:{d:0>2}:{d:0>2}.{d:0>3}Z",
@@ -220,7 +220,8 @@ pub fn isoDate(self: *Date, buf: []u8) ![]const u8 {
     return res[0..res.len];
 }
 
-pub fn httpDate(self: *Date, buf: []u8) ![]const u8 {
+pub fn httpDate(self: *IsoDate, buf: []u8) ![]const u8 {
+     
     const res = try std.fmt.bufPrint(
         buf,
         "{s}, {d:0>2} {s} {d:0>4} {d:0>2}:{d:0>2}:{d:0>2}.{d:0>3} GMT",
@@ -241,7 +242,7 @@ pub fn httpDate(self: *Date, buf: []u8) ![]const u8 {
 
 //Sun, 29 Nov 2015 02:25:35.212 GMT
 test "iosDate" {
-    var date = Date.now();
+    var date = IsoDate.now();
     var iso: [34]u8 = undefined;
     const resIso = try date.isoDate(&iso);
     std.debug.print("\nIso Date: {s}\n", .{resIso});
@@ -251,13 +252,13 @@ test "iosDate" {
 }
 
 test "date" {
-    var date = Date.now();
+    var date = IsoDate.now();
     std.debug.print("\n\n{s}\n\n", .{date.monthName.monthUpper()});
 }
 
 test "addDays" {
     // var d = Date.now();
-    var date = Date.addDays(12);
+    var date = IsoDate.addDays(12);
     var iso: [34]u8 = undefined;
     const resIso = try date.isoDate(&iso);
     std.debug.print("\nIso Date: {s}\n", .{resIso});
@@ -268,7 +269,7 @@ test "addDays" {
 
 test "minusDays" {
     // var d = Date.now();
-    var date = Date.minusDays(12);
+    var date = IsoDate.minusDays(12);
     var iso: [34]u8 = undefined;
     const resIso = try date.isoDate(&iso);
     std.debug.print("\nIso Date: {s}\n", .{resIso});
@@ -279,7 +280,7 @@ test "minusDays" {
 
 test "addWeeks" {
     // var d = Date.now();
-    var date = Date.addWeeks(12);
+    var date = IsoDate.addWeeks(12);
     var iso: [34]u8 = undefined;
     const resIso = try date.isoDate(&iso);
     std.debug.print("\nIso Date: {s}\n", .{resIso});
@@ -290,7 +291,7 @@ test "addWeeks" {
 
 test "minusWeeks" {
     // var d = Date.now();
-    var date = Date.minusWeeks(15);
+    var date = IsoDate.minusWeeks(15);
     var iso: [34]u8 = undefined;
     const resIso = try date.isoDate(&iso);
     std.debug.print("\nIso Date: {s}\n", .{resIso});
@@ -298,4 +299,3 @@ test "minusWeeks" {
     const resHttp = try date.httpDate(&http);
     std.debug.print("Http Date: {s}\n", .{resHttp});
 }
- 

@@ -32,7 +32,7 @@ pub fn init(arena: *std.heap.ArenaAllocator, account: []const u8, key: []const u
     return BlobServiceClient{
         .arena = arena,
         .allocator = allocator,
-        .clientOptions = try ClientOptions.new(allocator, "azure.cosmosdb.zig-v.0.01"),
+        .clientOptions = try ClientOptions.new(allocator, "azure.storage.blob.zig-v.0.01"),
         .account = account,
         .key = key,
     };

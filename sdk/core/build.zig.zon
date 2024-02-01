@@ -17,7 +17,7 @@
         },
         .fetch = .{
             .url = "https://github.com/kamlesh-nb/fetch/archive/refs/tags/v0.0.3.tar.gz",
-            .hash = "1220c64c864cbb038e00a6769b0bc36eaa01db2e99bd494cfc9989b1ab2f95f040d0",
+            .hash = "1220ac093c7abd72edcfe3bbd053a194853726c8a07b690c1f197925781326e9862b",
         },
     },
 

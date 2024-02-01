@@ -7,7 +7,8 @@ const Request = http.Request;
 const Response = http.Response;
 const Query = @import("resources/query.zig").Query;
 const Parameter = @import("resources/query.zig").Parameter;
-
+const  core = @import("azcore");
+const IsoDate = core.IsoDate;
 const CosmosClient = @import("cosmos.zig");
 const Database = @import("database.zig");
 const Container = @import("container.zig");
@@ -55,21 +56,21 @@ pub fn main() !void {
     const account = env.get("COSMOSDB_ACCOUNT").?;
     const key = env.get("COSMOSDB_KEY").?;
     var client = try CosmosClient.init(&Arena, account, key);
-    // const db = try client.createDatabase("floki");
+    var db = try client.createDatabase("floki");
 
-    var db = try client.getDatabase("floki");
+    // var db = try client.getDatabase("floki");
 
     if (db.errors) |err|  {
-        std.debug.print("\nDatabase: {s}\n", .{err.errorCode});
+        std.debug.print("\nDatabase: {s}\n", .{err.rawResponse});
         return;
     }
 
-    // _ = try db.createContainer("SaleOrder", "/id");
+    var con = try db.value.?.createContainer("SaleOrder", "/id");
     // std.debug.print("\nParsed: {any}\n", .{db.db.id});
     // try db.deleteContainer("SaleOrder");
     // const cont = try db.createContainer("SaleOrder", "/id");
 
-    var con = try db.value.?.getContainer("SaleOrder");
+    // var con = try db.value.?.getContainer("SaleOrder");
 
     if (con.errors) |err| {
         std.debug.print("\nContainer Error: {s}\n", .{err.errorCode});
@@ -81,13 +82,16 @@ pub fn main() !void {
     } else {
         std.debug.print("\nItem Error: {s}\n", .{so.errors.?.rawResponse});
     }
-
+    var d:[33]u8 = undefined;
+    var t:[33]u8 = undefined;
+    var date = IsoDate.now();
+    var shipDate = IsoDate.addDays(12);
     const saleOrder = .{
-        .id = "468",
-        .PoNumber = "PO123439186470",
-        .OrderDate = "2005-09-12T00:00:00Z",
-        .ShippedDate = "2005-07-28T00:00:00Z",
-        .AccountNumber = "10-4332-000910",
+        .id =  "202",
+        .PoNumber = "PO2022",
+        .OrderDate = try date.isoDate(&d),
+        .ShippedDate = try shipDate.isoDate(&t),
+        .AccountNumber ="AC-302311-023",
         .RegionId = "SE",
         .SubTotal = 1219.4589,
         .TaxAmount = 122.5838,
@@ -98,14 +102,13 @@ pub fn main() !void {
             .{ .OrderQty = 1, .ProductId = 2, .UnitPrice = 219.4589, .LineTotal = 219.4589 },
         },
     };
-    _ = saleOrder;
 
-    // const item = try container.createItem(SaleOrder, saleOrder, saleOrder.id);
-    // if (item.value) | doc |{
-    //     std.debug.print("\nItem Created: {any}\n", .{doc});
-    // } else {
-    //     std.debug.print("\nError: {s}\n", .{item.errors.?.errorCode});
-    // }
+    const item = try con.value.?.createItem(SaleOrder, saleOrder, saleOrder.id);
+    if (item.value) | doc |{
+        std.debug.print("\nItem Created: {any}\n", .{doc});
+    } else {
+        std.debug.print("\nError: {s}\n", .{item.errors.?.errorCode});
+    }
     // const items = try container.readItems(SaleOrders);
     // std.debug.print("\nAll Items: {any}\n", .{items});
     // const qry = .{

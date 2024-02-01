@@ -4,6 +4,7 @@ const TelemetryPolicy = core.TelemetryPolicy;
 const ApiVersionPolicy = core.ApiVersionPolicy;
 const RequestDatePolicy = core.RequestDatePolicy;
 const AuthorizationPolicy = core.AuthorizationPolicy;
+const ActivityIdPolicy = core.ActivityIdPolicy;
 
 const Policy = core.Policy;
 
@@ -77,6 +78,9 @@ pub fn send(client: *CosmosClient, resourceType: ResourceType, resourceLink: []c
     var authp = AuthorizationPolicy.new(client.authorization.auth.str());
     try client.pipeline.?.policies.add(authp.policy());
 
+    var actP = ActivityIdPolicy.new();
+    try client.pipeline.?.policies.add(actP.policy());
+
     var tep = TelemetryPolicy.new("azure.cosmosdb.zig.v0.0.1");
     try client.pipeline.?.policies.add(tep.policy());
 
@@ -126,7 +130,7 @@ pub fn createDatabase(client: *CosmosClient, id: []const u8) anyerror!Result(Dat
     var request = try createRequest(client, r[0..r.len], Method.post, Version.Http11);
 
     try request.body.set(payload);
-
+    std.debug.print("Payload: {s}\n", .{request.body.buffer.str()});
     var buf: [6]u8 = undefined;
     const str = try std.fmt.bufPrint(&buf, "{}", .{request.body.buffer.size});
 
