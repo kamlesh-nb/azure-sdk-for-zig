@@ -23,7 +23,6 @@ pub fn send(ptr: *anyopaque, arena: *std.heap.ArenaAllocator, request: *Request,
 pub fn policy(self: *QueryPolicy) Policy {
     return Policy{
         .ptr = self,
-        .value = self.query,
         .sendFn = send,
     };
 }

@@ -8,7 +8,6 @@ const Response = core.Response;
 const MaxItemPolicy = @This();
 
 max_item: u64 = 0,
-value: []const u8 = undefined,
 
 pub fn new(_max_item: u64) MaxItemPolicy {
     return MaxItemPolicy{
@@ -20,7 +19,6 @@ pub fn send(ptr: *anyopaque, arena: *std.heap.ArenaAllocator, request: *Request,
     const self: *MaxItemPolicy = @ptrCast(@alignCast(ptr));
     var buf: [10]u8 = undefined;
     const str = try std.fmt.bufPrint(&buf, "{}", .{self.max_item});
-    self.value = str[0..str.len];
     request.parts.headers.add("x-ms-max-item-count", str[0..str.len]);
     return next[0].send(arena, request, next[1..]);
 }
@@ -28,7 +26,6 @@ pub fn send(ptr: *anyopaque, arena: *std.heap.ArenaAllocator, request: *Request,
 pub fn policy(self: *MaxItemPolicy) Policy {
     return Policy{
         .ptr = self,
-        .value = self.value,
         .sendFn = send,
     };
 }
