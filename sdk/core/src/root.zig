@@ -21,4 +21,5 @@ pub const IsoDate = @import("isodate.zig");
 pub const Uuid = @import("policies/uuid.zig");
 pub const ApiError = @import("result.zig").ApiError;
 pub const Result = @import("result.zig").Result;
+pub const ApiResponse = @import("result.zig").ApiResponse;
 pub const Opaque = @import("result.zig").Opaque;

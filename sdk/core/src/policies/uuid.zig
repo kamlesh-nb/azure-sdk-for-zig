@@ -1,3 +1,7 @@
+//this code is borrowed from  the PR #18494
+//which is implemented by https://github.com/jonathanmarvens
+//since uuid is not yet available in the standard library
+
 const std = @import("std");
 
 const uuid = @This();

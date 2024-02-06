@@ -25,7 +25,7 @@ const Method = core.Method;
 const Version = core.Version;
 const Status = core.Status;
 
-const Result = core.Result;
+const ApiResponse = core.ApiResponse;
 const Opaque = core.Opaque;
 const ApiError = core.ApiError;
 
@@ -96,7 +96,7 @@ fn authToken(client: *CosmosClient, verb: Method, resourceType: ResourceType, re
     try client.authorization.genAuthSig(verb, resourceType, resourceLink, client.key);
 }
 
-pub fn getDatabase(client: *CosmosClient, id: []const u8) anyerror!Result(Database) {
+fn exists(client: *CosmosClient, id: []const u8) anyerror!ApiResponse(Database) {
     var resource: [2048]u8 = undefined;
     const r = try std.fmt.bufPrint(&resource, "/dbs/{s}", .{id});
     try client.reinitPipeline();
@@ -106,14 +106,12 @@ pub fn getDatabase(client: *CosmosClient, id: []const u8) anyerror!Result(Databa
     client.pipeline.?.deinit();
 
     if (!hasError(request.parts.method, response.parts.status)) {
-        return Result(Database){
-            .value = Database{ .client = client, .db = try response.body.get(client.allocator, DatabaseResponse) },
-            .errors = null,
+        return ApiResponse(Database){
+            .Ok = Database{ .client = client, .db = try response.body.get(client.allocator, DatabaseResponse) },
         };
     } else {
-        return Result(Database){
-            .value = null,
-            .errors = .{
+        return ApiResponse(Database){
+            .Error = .{
                 .status = @intFromEnum(response.parts.status),
                 .errorCode = response.parts.status.toString(),
                 .rawResponse = response.body.buffer.str(),
@@ -122,7 +120,7 @@ pub fn getDatabase(client: *CosmosClient, id: []const u8) anyerror!Result(Databa
     }
 }
 
-pub fn createDatabase(client: *CosmosClient, id: []const u8) anyerror!Result(Database) {
+fn create(client: *CosmosClient, id: []const u8) anyerror!ApiResponse(Database) {
     const payload = .{ .id = id };
     const r = "/dbs";
     try client.reinitPipeline();
@@ -141,20 +139,48 @@ pub fn createDatabase(client: *CosmosClient, id: []const u8) anyerror!Result(Dat
     client.pipeline.?.deinit();
 
     if (!hasError(request.parts.method, response.parts.status)) {
-        return Result(Database){
-            .value = Database{ .client = client, .db = try response.body.get(client.allocator, DatabaseResponse) },
-            .errors = null,
+        return ApiResponse(Database){
+            .Ok = Database{ .client = client, .db = try response.body.get(client.allocator, DatabaseResponse) },
         };
     } else {
-        return Result(Database){
-            .value = null,
-            .errors = .{
+        return ApiResponse(Database){
+            .Error = .{
                 .status = @intFromEnum(response.parts.status),
                 .errorCode = response.parts.status.toString(),
                 .rawResponse = response.body.buffer.str(),
             },
         };
     }
+}
+
+/// Create a new database or return an existing one 
+pub fn getDatabase(client: *CosmosClient, id: []const u8) anyerror!ApiResponse(Database) {
+     const existsResponse = try client.exists(id);
+
+     switch (existsResponse) {
+        .Ok => return existsResponse,
+        .Error => {
+               if(existsResponse.Error.status == 404){
+                    return client.create(id);
+                } else {
+                    return existsResponse;
+                }
+        },
+     }
+}
+
+/// Create a new database or return an existing one
+pub fn createDatabase(client: *CosmosClient, id: []const u8) anyerror!ApiResponse(Database) {
+      const existsResponse = client.exists(id);
+     if(existsResponse.has(.Error)){
+        if(existsResponse.Error.status == 404){
+            return client.create(id);
+        } else {
+            return existsResponse;
+        }
+     } else {
+        return existsResponse;
+     }
 }
 
 pub fn createRequest(client: *CosmosClient, path: []const u8, verb: Method, version: Version) !Request {

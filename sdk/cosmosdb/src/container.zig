@@ -3,7 +3,6 @@ const CosmosClient = @import("cosmos.zig");
 const Database = @import("database.zig");
 const E = @import("enums.zig");
 const ResourceType = E.ResourceType;
-const Query = @import("resources/query.zig").Query;
 const ContainerResponse = @import("resources/container.zig").ContainerResponse;
 const hasError = @import("errors.zig").hasError;
 const PartitionKeyPolicy = @import("policies/partition_key_policy.zig");
@@ -20,7 +19,7 @@ const Method = core.Method;
 const Version = core.Version;
 const Status = core.Status;
 
-const Result = core.Result;
+const ApiResponse = core.ApiResponse;
 const Opaque = core.Opaque;
 const ApiError = core.ApiError;
 
@@ -32,25 +31,23 @@ container: ContainerResponse,
 
 
 
-fn itemResponse(self: *Container, hasErr: bool, response: *Response, comptime T: type) anyerror!Result(T) {
+fn itemResponse(self: *Container, hasErr: bool, response: *Response, comptime T: type) anyerror!ApiResponse(T) {
     if (hasErr) {
-        return Result(T){
-            .value = null,
-            .errors = .{
+        return ApiResponse(T){
+            .Error = .{
                 .status = @intFromEnum(response.parts.status),
                 .errorCode = response.parts.status.toString(),
                 .rawResponse = response.body.buffer.str(),
             },
         };
     } else {
-        return Result(T){
-            .value = if (response.body.buffer.size > 0) try response.body.get(self.client.allocator, T) else null,
-            .errors = null,
+        return ApiResponse(T){
+            .Ok = if (response.body.buffer.size > 0) try response.body.get(self.client.allocator, T) else T{},
         };
     }
 }
 
-pub fn createItem(self: *Container, comptime T: type, payload: anytype, partitionKey: []const u8) anyerror!Result(T) {
+pub fn createItem(self: *Container, comptime T: type, payload: anytype, partitionKey: []const u8) anyerror!ApiResponse(T) {
     var resourceType: [2048]u8 = undefined;
     const rt = try std.fmt.bufPrint(&resourceType, "/dbs/{s}/colls/{s}/docs", .{ self.db.db.id, self.container.id });
 
@@ -78,7 +75,7 @@ pub fn createItem(self: *Container, comptime T: type, payload: anytype, partitio
     return self.itemResponse(hasError(request.parts.method, response.parts.status), &response, T);
 }
 
-pub fn readItem(self: *Container, comptime T: type, item_id: []const u8, partitionKey: []const u8) anyerror!Result(T) {
+pub fn readItem(self: *Container, comptime T: type, item_id: []const u8, partitionKey: []const u8) anyerror!ApiResponse(T) {
     var resourceType: [2048]u8 = undefined;
     const rt = try std.fmt.bufPrint(&resourceType, "/dbs/{s}/colls/{s}/docs/{s}", .{ self.db.db.id, self.container.id, item_id });
 
@@ -104,7 +101,7 @@ pub fn readItem(self: *Container, comptime T: type, item_id: []const u8, partiti
     return self.itemResponse(hasError(request.parts.method, response.parts.status), &response, T);
 }
 
-pub fn updateItem(self: *Container, comptime T: type, payload: T, id: []const u8, partitionKey: []const u8) anyerror!Result(T) {
+pub fn updateItem(self: *Container, comptime T: type, payload: T, id: []const u8, partitionKey: []const u8) anyerror!ApiResponse(T) {
     var resourceType: [2048]u8 = undefined;
     const rt = try std.fmt.bufPrint(&resourceType, "/dbs/{s}/colls/{s}/docs/{s}", .{ self.db.db.id, self.container.id, id });
 
@@ -129,10 +126,10 @@ pub fn updateItem(self: *Container, comptime T: type, payload: T, id: []const u8
 
     self.client.pipeline.?.deinit();
 
-    return itemResponse(hasError(request.parts.method, response.parts.status), self.client.allocator, &response, T);
+    return self.itemResponse(hasError(request.parts.method, response.parts.status), &response, T);
 }
 
-pub fn deleteItem(self: *Container, id: []const u8, partitionKey: []const u8) !Result(Opaque) {
+pub fn deleteItem(self: *Container, id: []const u8, partitionKey: []const u8) !ApiResponse(Opaque) {
     var resourceType: [2048]u8 = undefined;
     const rt = try std.fmt.bufPrint(&resourceType, "/dbs/{s}/colls/{s}/docs/{s}", .{ self.db.db.id, self.container.id, id });
 
@@ -153,7 +150,7 @@ pub fn deleteItem(self: *Container, id: []const u8, partitionKey: []const u8) !R
     return self.itemResponse(hasError(request.parts.method, response.parts.status), &response, Opaque);
 }
 
-pub fn queryItems(self: *Container, comptime T: type, query: anytype) !T {
+pub fn queryItems(self: *Container, comptime T: type, query: anytype) anyerror!ApiResponse(T) {
     var resourceType: [2048]u8 = undefined;
     const rt = try std.fmt.bufPrint(&resourceType, "/dbs/{s}/colls/{s}/docs", .{ self.db.db.id, self.container.id });
 
@@ -189,7 +186,7 @@ pub fn queryItems(self: *Container, comptime T: type, query: anytype) !T {
     return self.itemResponse(hasError(request.parts.method, response.parts.status), &response, T);
 }
 
-pub fn patchItem(self: *Container, comptime T: type, id: []const u8, partitionKey: []const u8, patch: anytype) !T {
+pub fn patchItem(self: *Container, comptime T: type, id: []const u8, partitionKey: []const u8, patch: anytype) anyerror!ApiResponse(T) {
     var resourceType: [2048]u8 = undefined;
     const rt = try std.fmt.bufPrint(&resourceType, "/dbs/{s}/colls/{s}/docs/{s}", .{ self.db.db.id, self.container.id, id });
 
@@ -215,6 +212,6 @@ pub fn patchItem(self: *Container, comptime T: type, id: []const u8, partitionKe
     var response = try self.client.send(ResourceType.docs, rl[0..rl.len], &request);
 
     self.client.pipeline.?.deinit();
-
+    std.debug.print("\nPATCH ITEM RESPONSE: {s}\n", .{response.body.buffer.str()});
     return self.itemResponse(hasError(request.parts.method, response.parts.status), &response, T);
 }

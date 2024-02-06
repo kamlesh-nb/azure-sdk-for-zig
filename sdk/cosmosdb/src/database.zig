@@ -20,7 +20,7 @@ const Method = core.Method;
 const Version = core.Version;
 const Status = core.Status;
 
-const Result = core.Result;
+const ApiResponse = core.ApiResponse;
 const Opaque = core.Opaque;
 const ApiError = core.ApiError;
 
@@ -29,7 +29,7 @@ const Database = @This();
 client: *CosmosClient,
 db: DatabaseResponse,
 
-pub fn getContainer(self: *Database, id: []const u8) anyerror!Result(Container) {
+pub fn getContainer(self: *Database, id: []const u8) anyerror!ApiResponse(Container) {
     var resourceType: [2048]u8 = undefined;
     const rt = try std.fmt.bufPrint(&resourceType, "/dbs/{s}/colls/{s}", .{ self.db.id, id });
 
@@ -37,20 +37,18 @@ pub fn getContainer(self: *Database, id: []const u8) anyerror!Result(Container) 
     const rl = try std.fmt.bufPrint(&resourceLink, "dbs/{s}/colls/{s}", .{ self.db.id, id });
     try self.client.reinitPipeline();
     var request = try self.client.createRequest(rt[0..rt.len], Method.get, Version.Http11);
-
+    
     var response = try self.client.send(ResourceType.colls, rl[0..rl.len], &request);
 
     self.client.pipeline.?.deinit();
 
     if(!hasError(request.parts.method, response.parts.status)) {
-           return Result(Container){ 
-                .value = Container{ .client = self.client, .db = self, .container = try response.body.get(self.client.allocator, ContainerResponse) },
-                .errors = null,
+           return ApiResponse(Container){ 
+                .Ok = Container{ .client = self.client, .db = self, .container = try response.body.get(self.client.allocator, ContainerResponse) },
             };
     } else {
-        return Result(Container){ 
-            .value = null,
-            .errors = .{
+        return ApiResponse(Container){ 
+            .Error = .{
                 .status = @intFromEnum(response.parts.status),
                 .errorCode = response.parts.status.toString(),
                 .rawResponse = response.body.buffer.str(),
@@ -60,7 +58,7 @@ pub fn getContainer(self: *Database, id: []const u8) anyerror!Result(Container) 
     
 }
 
-pub fn createContainer(self: *Database, id: []const u8, partitionKey: []const u8) anyerror!Result(Container) {
+pub fn createContainer(self: *Database, id: []const u8, partitionKey: []const u8) anyerror!ApiResponse(Container) {
     var resourceType: [2048]u8 = undefined;
     const rt = try std.fmt.bufPrint(&resourceType, "/dbs/{s}/colls", .{self.db.id});
 
@@ -110,14 +108,12 @@ pub fn createContainer(self: *Database, id: []const u8, partitionKey: []const u8
     self.client.pipeline.?.deinit();
 
      if(!hasError(request.parts.method, response.parts.status)) {
-           return Result(Container){ 
-                .value = Container{ .client = self.client, .db = self, .container = try response.body.get(self.client.allocator, ContainerResponse) },
-                .errors = null,
+           return ApiResponse(Container){ 
+                .Ok = Container{ .client = self.client, .db = self, .container = try response.body.get(self.client.allocator, ContainerResponse) },
             };
     } else {
-        return Result(Container){ 
-            .value = null,
-            .errors = .{
+        return ApiResponse(Container){ 
+            .Error = .{
                 .status = @intFromEnum(response.parts.status),
                 .errorCode = response.parts.status.toString(),
                 .rawResponse = response.body.buffer.str(),
@@ -126,7 +122,7 @@ pub fn createContainer(self: *Database, id: []const u8, partitionKey: []const u8
     }
 }
 
-pub fn deleteContainer(self: *Database, id: []const u8) anyerror!Result(Opaque) {
+pub fn deleteContainer(self: *Database, id: []const u8) anyerror!ApiResponse(Opaque) {
     var resourceType: [2048]u8 = undefined;
     const rt = try std.fmt.bufPrint(&resourceType, "/dbs/{s}/colls/{s}", .{ self.db.id, id });
 
@@ -142,14 +138,12 @@ pub fn deleteContainer(self: *Database, id: []const u8) anyerror!Result(Opaque) 
     self.client.pipeline.?.deinit();
 
       if(!hasError(request.parts.method, response.parts.status)) {
-           return Result(Opaque){ 
-                .value = null,
-                .errors = null,
+           return ApiResponse(Opaque){ 
+                .Ok = Opaque{},
             };
     } else {
-        return Result(Opaque){ 
-            .value = null,
-            .errors = .{
+        return ApiResponse(Opaque){ 
+            .Error = .{
                 .status = @intFromEnum(response.parts.status),
                 .errorCode = response.parts.status.toString(),
                 .rawResponse = response.body.buffer.str(),

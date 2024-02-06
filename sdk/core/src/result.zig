@@ -13,6 +13,7 @@ pub fn Result(comptime T: type) type {
     };
 }
 
+
 pub const Opaque = struct{};
 
 const TestEntity = struct {
@@ -63,4 +64,61 @@ test "ok" {
     try std.testing.expect(std.mem.eql(u8, result.value.?.name, "test"));
 }
 
+pub fn ApiResponse(comptime T: type) type {
+    return union(enum) {
+        const Self = @This();
+        Ok: T,
+        Error: ApiError,
+
+        const Tag = @typeInfo(Self).Union.tag_type.?;
+
+        fn fieldType(comptime kind: Tag) type {
+            return std.meta.fields(Self)[@intFromEnum(kind)].field_type;
+        }
+
+        pub fn has(self: Self, comptime kind: Tag) bool {
+            switch (self) {
+                kind => return true,
+                else => return false,
+            }
+        }
+
+    };
+}
+
+fn testSendAROk(comptime T: type) ApiResponse(T) {
+    const entity = TestEntity{
+        .id = 1,
+        .name = "test",
+    };
+    return ApiResponse(T){
+        .Ok = entity,
+    };
+}
+
+fn testSendARError(comptime T: type) ApiResponse(T) {
+    const err = ApiError{
+        .status = 500,
+        .errorCode = "internal_error",
+        .rawResponse = "internal server error",
+    };
+    return ApiResponse(T){
+        .Error = err,
+    };
+}
+
+
+test "apiresponseok" {
+    const result = testSendAROk(TestEntity);
+    try std.testing.expect(result.has(.Error) == false);
+    try std.testing.expect(result.Ok.id == 1);
+}
+
+test "apiresponseerr" {
+    const result = testSendARError(TestEntity);
+    try std.testing.expect(result.has(.Ok) == false);
+    try std.testing.expect(result.Error.status == 500);
+    try std.testing.expect(std.mem.eql(u8, result.Error.errorCode, "internal_error"));
+    try std.testing.expect(std.mem.eql(u8, result.Error.rawResponse, "internal server error"));
+}
   
