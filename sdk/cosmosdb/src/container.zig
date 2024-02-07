@@ -29,8 +29,6 @@ client: *CosmosClient,
 db: *Database,
 container: ContainerResponse,
 
-
-
 fn itemResponse(self: *Container, hasErr: bool, response: *Response, comptime T: type) anyerror!ApiResponse(T) {
     if (hasErr) {
         return ApiResponse(T){
@@ -212,6 +210,6 @@ pub fn patchItem(self: *Container, comptime T: type, id: []const u8, partitionKe
     var response = try self.client.send(ResourceType.docs, rl[0..rl.len], &request);
 
     self.client.pipeline.?.deinit();
-    std.debug.print("\nPATCH ITEM RESPONSE: {s}\n", .{response.body.buffer.str()});
+
     return self.itemResponse(hasError(request.parts.method, response.parts.status), &response, T);
 }
