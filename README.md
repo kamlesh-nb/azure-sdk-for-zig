@@ -23,7 +23,7 @@ Here's a quick sample for connecting to Aziure CosmosDb, creating database, cont
 - Fetch CosmosDb package
 
 ```shell
-    zig fetch --save https://github.com/kamlesh-nb/azure-sdk-for-zig/releases/download/6/azcosmosdb.tar.gz
+    zig fetch --save https://github.com/kamlesh-nb/azure-sdk-for-zig/releases/download/7/azcosmosdb.tar.gz
 ```
 
 ```zig
