@@ -14,12 +14,12 @@ pub fn build(b: *std.Build) void {
 
     _ = b.addModule("azcosmos", .{
         .root_source_file = .{ .path = "src/root.zig" },
-        .imports = &.{
-            .{
-                .name = "azcore",
-                .module = b.dependency("azcore", .{}).module("azcore"),
-            },
-        },
+        // .imports = &.{
+        //     .{
+        //         .name = "azcore",
+        //         .module = b.dependency("azcore", .{}).module("azcore"),
+        //     },
+        // },
     });
 
     lib.root_module.addImport("azcore", b.dependency("azcore", .{
@@ -59,7 +59,6 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = optimize,
     });
-
 
     tests.root_module.addImport("azcore", b.dependency("azcore", .{
         .target = target,

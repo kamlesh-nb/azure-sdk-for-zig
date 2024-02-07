@@ -36,6 +36,11 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
 
+    exe.root_module.addImport("azcore", b.dependency("azcore", .{
+        .target = target,
+        .optimize = optimize,
+    }).module("azcore"));
+
     exe.root_module.addImport("azcosmos", b.dependency("azcosmos", .{
         .target = target,
         .optimize = optimize,
