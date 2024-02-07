@@ -4,13 +4,16 @@ const TelemetryPolicy = core.TelemetryPolicy;
 const ApiVersionPolicy = core.ApiVersionPolicy;
 const RequestDatePolicy = core.RequestDatePolicy;
 const AuthorizationPolicy = core.AuthorizationPolicy;
+const ActivityIdPolicy = core.ActivityIdPolicy;
 
 const Policy = core.Policy;
-const Array = std.ArrayList(Policy);
+
 const Pipleline = core.Pipeline;
 const ClientOptions = core.ClientOptions;
 const E = @import("enums.zig");
 const CosmosErrors = @import("errors.zig").CosmosErrors;
+const hasError = @import("errors.zig").hasError;
+
 const ResourceType = E.ResourceType;
 const Authorization = @import("authorization.zig");
 const Database = @import("database.zig");
@@ -20,6 +23,11 @@ const Request = core.Request;
 const Response = core.Response;
 const Method = core.Method;
 const Version = core.Version;
+const Status = core.Status;
+
+const ApiResponse = core.ApiResponse;
+const Opaque = core.Opaque;
+const ApiError = core.ApiError;
 
 pub const Databases = struct {
     _rid: []const u8,
@@ -70,6 +78,9 @@ pub fn send(client: *CosmosClient, resourceType: ResourceType, resourceLink: []c
     var authp = AuthorizationPolicy.new(client.authorization.auth.str());
     try client.pipeline.?.policies.add(authp.policy());
 
+    var actP = ActivityIdPolicy.new();
+    try client.pipeline.?.policies.add(actP.policy());
+
     var tep = TelemetryPolicy.new("azure.cosmosdb.zig.v0.0.1");
     try client.pipeline.?.policies.add(tep.policy());
 
@@ -85,7 +96,7 @@ fn authToken(client: *CosmosClient, verb: Method, resourceType: ResourceType, re
     try client.authorization.genAuthSig(verb, resourceType, resourceLink, client.key);
 }
 
-pub fn getDatabase(client: *CosmosClient, id: []const u8) anyerror!Database {
+fn exists(client: *CosmosClient, id: []const u8) anyerror!ApiResponse(Database) {
     var resource: [2048]u8 = undefined;
     const r = try std.fmt.bufPrint(&resource, "/dbs/{s}", .{id});
     try client.reinitPipeline();
@@ -94,23 +105,22 @@ pub fn getDatabase(client: *CosmosClient, id: []const u8) anyerror!Database {
 
     client.pipeline.?.deinit();
 
-    switch (response.parts.status) {
-        .ok => {
-            const db = try response.body.get(client.allocator, DatabaseResponse);
-            return Database{ .client = client, .db = db };
-        },
-        .not_found => {
-            std.log.err("\nError:\n{s}\n", .{response.body.buffer.str()});
-            return error.DatabaseNotFound;
-        },
-        else => {
-            std.log.err("\nError:\n{s}\n", .{response.body.buffer.str()});
-            return error.UnknownError;
-        },
+    if (!hasError(request.parts.method, response.parts.status)) {
+        return ApiResponse(Database){
+            .Ok = Database{ .client = client, .db = try response.body.get(client.allocator, DatabaseResponse) },
+        };
+    } else {
+        return ApiResponse(Database){
+            .Error = .{
+                .status = @intFromEnum(response.parts.status),
+                .errorCode = response.parts.status.toString(),
+                .rawResponse = response.body.buffer.str(),
+            },
+        };
     }
 }
 
-pub fn createDatabase(client: *CosmosClient, id: []const u8) anyerror!Database {
+fn create(client: *CosmosClient, id: []const u8) anyerror!ApiResponse(Database) {
     const payload = .{ .id = id };
     const r = "/dbs";
     try client.reinitPipeline();
@@ -118,7 +128,7 @@ pub fn createDatabase(client: *CosmosClient, id: []const u8) anyerror!Database {
     var request = try createRequest(client, r[0..r.len], Method.post, Version.Http11);
 
     try request.body.set(payload);
-
+ 
     var buf: [6]u8 = undefined;
     const str = try std.fmt.bufPrint(&buf, "{}", .{request.body.buffer.size});
 
@@ -128,28 +138,49 @@ pub fn createDatabase(client: *CosmosClient, id: []const u8) anyerror!Database {
 
     client.pipeline.?.deinit();
 
-    switch (response.parts.status) {
-        .ok, .created => {
-            const db = try response.body.get(client.allocator, DatabaseResponse);
-            return Database{ .client = client, .db = db };
-        },
-        .bad_request => {
-            std.log.err("\nError:\n{s}\n", .{response.body.buffer.str()});
-            return error.BadRequest;
-        },
-        .conflict => {
-            std.log.err("\nError:\n{s}\n", .{response.body.buffer.str()});
-            return error.DatabaseAlreadyExists;
-        },
-        .unauthorized => {
-            std.log.err("\nError:\n{s}\n", .{response.body.buffer.str()});
-            return error.Unauthorized;
-        },
-        else => {
-            std.log.err("\nError:\n{s}\n", .{response.body.buffer.str()});
-            return error.UnknownError;
-        },
+    if (!hasError(request.parts.method, response.parts.status)) {
+        return ApiResponse(Database){
+            .Ok = Database{ .client = client, .db = try response.body.get(client.allocator, DatabaseResponse) },
+        };
+    } else {
+        return ApiResponse(Database){
+            .Error = .{
+                .status = @intFromEnum(response.parts.status),
+                .errorCode = response.parts.status.toString(),
+                .rawResponse = response.body.buffer.str(),
+            },
+        };
     }
+}
+
+/// Create a new database or return an existing one 
+pub fn getDatabase(client: *CosmosClient, id: []const u8) anyerror!ApiResponse(Database) {
+     const existsResponse = try client.exists(id);
+
+     switch (existsResponse) {
+        .Ok => return existsResponse,
+        .Error => {
+               if(existsResponse.Error.status == 404){
+                    return client.create(id);
+                } else {
+                    return existsResponse;
+                }
+        },
+     }
+}
+
+/// Create a new database or return an existing one
+pub fn createDatabase(client: *CosmosClient, id: []const u8) anyerror!ApiResponse(Database) {
+      const existsResponse = client.exists(id);
+     if(existsResponse.has(.Error)){
+        if(existsResponse.Error.status == 404){
+            return client.create(id);
+        } else {
+            return existsResponse;
+        }
+     } else {
+        return existsResponse;
+     }
 }
 
 pub fn createRequest(client: *CosmosClient, path: []const u8, verb: Method, version: Version) !Request {

@@ -25,7 +25,6 @@ pub fn send(ptr: *anyopaque, arena: *std.heap.ArenaAllocator, request: *Request,
 pub fn policy(self: *TelemetryPolicy) Policy {
     return Policy{
         .ptr = self,
-        .value = self.value,
         .sendFn = send,
     };
 }

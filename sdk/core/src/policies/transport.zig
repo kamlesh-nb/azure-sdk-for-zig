@@ -10,7 +10,6 @@ const Policy = @import("policy.zig").Policy;
 const TransportPolicy = @This();
 
 transport: TransportOptions,
-value: []const u8 = undefined,
 
 pub fn new(opt: TransportOptions) TransportPolicy {
     return TransportPolicy{
@@ -27,7 +26,6 @@ pub fn send(ptr: *anyopaque, arena: *std.heap.ArenaAllocator, request: *Request,
 pub fn policy(self: *TransportPolicy) Policy {
     return Policy{
         .ptr = self,
-        .value = self.value,
         .sendFn = send,
     };
 }

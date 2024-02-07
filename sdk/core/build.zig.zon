@@ -11,13 +11,13 @@
             .url = "https://github.com/kamlesh-nb/tls/archive/refs/tags/v0.0.1.tar.gz",
             .hash = "12200386ca38d37e25b820cfc94780be2095a6e04818c0ed51c5b6d62021c168197c",
         },
-        .fetch = .{
-            .url = "https://github.com/kamlesh-nb/fetch/archive/refs/tags/v0.0.1.tar.gz",
-            .hash = "12200ad6e0ac0405f5bd58e0ece205ff46230f97bdc29383289658786c88c132aa46",
-        },
         .http = .{
             .url = "https://github.com/kamlesh-nb/http/archive/refs/tags/v0.0.3.tar.gz",
             .hash = "1220dbdcd2953ee3291de6afdd85d808c20b3e8a2f86e53a4193feb68097bd421627",
+        },
+        .fetch = .{
+            .url = "https://github.com/kamlesh-nb/fetch/archive/refs/tags/v0.0.3.tar.gz",
+            .hash = "1220ac093c7abd72edcfe3bbd053a194853726c8a07b690c1f197925781326e9862b",
         },
     },
 

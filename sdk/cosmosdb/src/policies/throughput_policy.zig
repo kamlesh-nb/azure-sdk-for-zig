@@ -24,7 +24,6 @@ pub fn send(ptr: *anyopaque, arena: *std.heap.ArenaAllocator, request: *Request,
 pub fn policy(self: *ThroughputPolicy) Policy {
     return Policy{
         .ptr = self,
-        .value = self.throughput,
         .sendFn = send,
     };
 }

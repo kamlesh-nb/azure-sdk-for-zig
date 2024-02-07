@@ -30,7 +30,6 @@ pub fn send(ptr: *anyopaque, arena: *std.heap.ArenaAllocator, request: *Request,
 pub fn policy(self: *PartitionKeyPolicy) Policy {
     return Policy{
         .ptr = self,
-        .value = self.partition_key,
         .sendFn = send,
     };
 }

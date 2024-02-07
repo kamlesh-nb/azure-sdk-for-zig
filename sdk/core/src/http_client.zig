@@ -19,6 +19,7 @@ pub fn executeRequest(self: *HttpClient, arena: *std.heap.ArenaAllocator, reques
         .port = request.parts.uri.port.?,
         .protocol = if (std.mem.eql(u8, request.parts.uri.scheme, "https")) .tls else .plain,
     };
+    
     defer client.deinit();
     try client.connect();
 
@@ -28,5 +29,6 @@ pub fn executeRequest(self: *HttpClient, arena: *std.heap.ArenaAllocator, reques
     var response = try Response.init(allocator);
     var parser = response.parser();
     try parser.parse(client.reader());
+    try client.close();
     return response;
 }

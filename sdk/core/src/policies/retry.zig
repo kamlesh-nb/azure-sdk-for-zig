@@ -12,7 +12,6 @@ const RetryPolicy = @This();
 options: RetryOptions,
 retryDelayInMs: u64 = 1000,
 maxRetryDelayInMs: u64 = 1000 * 64,
-value: []const u8 = undefined,
 
 fn wait(self: *RetryPolicy, duration: u64) void {
     _ = self;
@@ -80,7 +79,6 @@ pub fn new(opt: RetryOptions) RetryPolicy {
 pub fn policy(self: *RetryPolicy) Policy {
     return Policy{
         .ptr = self,
-        .value = self.value,
         .sendFn = send,
     };
 }
