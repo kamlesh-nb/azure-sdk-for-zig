@@ -4,7 +4,6 @@ const Container = @import("container.zig");
 const E = @import("enums.zig");
 const ResourceType = E.ResourceType;
 
-
 const CosmosErrors = @import("errors.zig").CosmosErrors;
 const hasError = @import("errors.zig").hasError;
 
@@ -29,7 +28,7 @@ const Database = @This();
 client: *CosmosClient,
 db: DatabaseResponse,
 
-pub fn getContainer(self: *Database, id: []const u8) anyerror!ApiResponse(Container) {
+fn exists(self: *Database, id: []const u8) anyerror!ApiResponse(Container) {
     var resourceType: [2048]u8 = undefined;
     const rt = try std.fmt.bufPrint(&resourceType, "/dbs/{s}/colls/{s}", .{ self.db.id, id });
 
@@ -37,28 +36,27 @@ pub fn getContainer(self: *Database, id: []const u8) anyerror!ApiResponse(Contai
     const rl = try std.fmt.bufPrint(&resourceLink, "dbs/{s}/colls/{s}", .{ self.db.id, id });
     try self.client.reinitPipeline();
     var request = try self.client.createRequest(rt[0..rt.len], Method.get, Version.Http11);
-    
+
     var response = try self.client.send(ResourceType.colls, rl[0..rl.len], &request);
 
     self.client.pipeline.?.deinit();
 
-    if(!hasError(request.parts.method, response.parts.status)) {
-           return ApiResponse(Container){ 
-                .Ok = Container{ .client = self.client, .db = self, .container = try response.body.get(self.client.allocator, ContainerResponse) },
-            };
+    if (!hasError(request.parts.method, response.parts.status)) {
+        return ApiResponse(Container){
+            .Ok = Container{ .client = self.client, .db = self, .container = try response.body.get(self.client.allocator, ContainerResponse) },
+        };
     } else {
-        return ApiResponse(Container){ 
+        return ApiResponse(Container){
             .Error = .{
                 .status = @intFromEnum(response.parts.status),
                 .errorCode = response.parts.status.toString(),
                 .rawResponse = response.body.buffer.str(),
             },
-         };
+        };
     }
-    
 }
 
-pub fn createContainer(self: *Database, id: []const u8, partitionKey: []const u8) anyerror!ApiResponse(Container) {
+fn create(self: *Database, id: []const u8, partitionKey: []const u8) anyerror!ApiResponse(Container) {
     var resourceType: [2048]u8 = undefined;
     const rt = try std.fmt.bufPrint(&resourceType, "/dbs/{s}/colls", .{self.db.id});
 
@@ -107,19 +105,49 @@ pub fn createContainer(self: *Database, id: []const u8, partitionKey: []const u8
 
     self.client.pipeline.?.deinit();
 
-     if(!hasError(request.parts.method, response.parts.status)) {
-           return ApiResponse(Container){ 
-                .Ok = Container{ .client = self.client, .db = self, .container = try response.body.get(self.client.allocator, ContainerResponse) },
-            };
+    if (!hasError(request.parts.method, response.parts.status)) {
+        return ApiResponse(Container){
+            .Ok = Container{ .client = self.client, .db = self, .container = try response.body.get(self.client.allocator, ContainerResponse) },
+        };
     } else {
-        return ApiResponse(Container){ 
+        return ApiResponse(Container){
             .Error = .{
                 .status = @intFromEnum(response.parts.status),
                 .errorCode = response.parts.status.toString(),
                 .rawResponse = response.body.buffer.str(),
             },
-         };
+        };
     }
+}
+
+pub fn getContainer(self: *Database, id: []const u8, partitionKey: []const u8) anyerror!ApiResponse(Container) {
+    const existsResponse = try self.exists(id);
+
+     switch (existsResponse) {
+        .Ok => return existsResponse,
+        .Error => {
+               if(existsResponse.Error.status == 404){
+                    return self.create(id, partitionKey);
+                } else {
+                    return existsResponse;
+                }
+        },
+     }
+}
+
+pub fn createContainer(self: *Database, id: []const u8, partitionKey: []const u8) anyerror!ApiResponse(Container) {
+    const existsResponse = try self.exists(id);
+
+     switch (existsResponse) {
+        .Ok => return existsResponse,
+        .Error => {
+               if(existsResponse.Error.status == 404){
+                    return self.create(id, partitionKey);
+                } else {
+                    return existsResponse;
+                }
+        },
+     }
 }
 
 pub fn deleteContainer(self: *Database, id: []const u8) anyerror!ApiResponse(Opaque) {
@@ -137,17 +165,17 @@ pub fn deleteContainer(self: *Database, id: []const u8) anyerror!ApiResponse(Opa
 
     self.client.pipeline.?.deinit();
 
-      if(!hasError(request.parts.method, response.parts.status)) {
-           return ApiResponse(Opaque){ 
-                .Ok = Opaque{},
-            };
+    if (!hasError(request.parts.method, response.parts.status)) {
+        return ApiResponse(Opaque){
+            .Ok = Opaque{},
+        };
     } else {
-        return ApiResponse(Opaque){ 
+        return ApiResponse(Opaque){
             .Error = .{
                 .status = @intFromEnum(response.parts.status),
                 .errorCode = response.parts.status.toString(),
                 .rawResponse = response.body.buffer.str(),
             },
-         };
+        };
     }
 }

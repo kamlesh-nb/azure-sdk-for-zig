@@ -128,7 +128,7 @@ fn create(client: *CosmosClient, id: []const u8) anyerror!ApiResponse(Database) 
     var request = try createRequest(client, r[0..r.len], Method.post, Version.Http11);
 
     try request.body.set(payload);
-    std.debug.print("Payload: {s}\n", .{request.body.buffer.str()});
+ 
     var buf: [6]u8 = undefined;
     const str = try std.fmt.bufPrint(&buf, "{}", .{request.body.buffer.size});
 

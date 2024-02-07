@@ -1,6 +1,6 @@
 const std = @import("std");
 const Authorization = @import("authorization.zig");
- 
+
 const core = @import("azcore");
 const IsoDate = core.IsoDate;
 const Uuid = core.Uuid;
@@ -52,7 +52,8 @@ pub fn main() !void {
     const key = env.get("COSMOSDB_KEY").?;
     var client = try CosmosClient.init(&Arena, account, key);
 
-    const db = try client.getDatabase("floki");
+    //this gets the database and creats it if it does not exist
+    const db = try client.getDatabase("ziggy");
 
     var flokiDb = switch (db) {
         .Ok => db.Ok,
@@ -62,27 +63,16 @@ pub fn main() !void {
         },
     };
 
-    const con = try flokiDb.getContainer("SaleOrder");
+    //gets the container or creates if it does not exist
+    const con = try flokiDb.getContainer("SaleOrder", "/id");
 
     var containerSO = switch (con) {
         .Ok => con.Ok,
         .Error => {
-            std.debug.print("\nContainer: {s}\n", .{con.Error.errorCode});
+            std.debug.print("\nContainer: {s}\n{s}", .{con.Error.errorCode, con.Error.rawResponse});
             return;
         },
     };
-
-    const so = try containerSO.readItem(SaleOrder, "629e34962898482f", "629e34962898482f");
-
-    const soItem = switch (so) {
-        .Ok => so.Ok,
-        .Error => {
-            std.debug.print("\nItem Error: {s}\n", .{so.Error.errorCode});
-            return;
-        },
-    };
-
-    std.debug.print("\nItem Read: {any}\n", .{soItem});
 
     var d: [33]u8 = undefined;
     var t: [33]u8 = undefined;
@@ -112,6 +102,7 @@ pub fn main() !void {
         },
     };
 
+    //creates item in the container
     const item = try containerSO.createItem(SaleOrder, saleOrder, &saleOrder.id);
 
     const createdItem = switch (item) {
@@ -121,9 +112,23 @@ pub fn main() !void {
             return;
         },
     };
-    
+
     std.debug.print("\nItem Created: id = {s}\n", .{createdItem.id});
 
+    //read item from the container based on the id amd partition key.
+    const so = try containerSO.readItem(SaleOrder, &id, &id);
+
+    const soItem = switch (so) {
+        .Ok => so.Ok,
+        .Error => {
+            std.debug.print("\nItem Error: {s}\n", .{so.Error.errorCode});
+            return;
+        },
+    };
+
+    std.debug.print("\nItem Read: {any}\n", .{soItem});
+
+    //query items in the container
     const qry = .{
         .query = "SELECT * FROM SaleOrder s WHERE s.RegionId = @regionId",
         .parameters = .{
@@ -149,6 +154,8 @@ pub fn main() !void {
 
         doc.ShippedDate = try shipDateUpdate.isoDate(&t);
         doc.RegionId = "EU";
+
+        //update the item in the container
         const upd = try containerSO.updateItem(SaleOrder, doc, doc.id, doc.id);
 
         const updatedItem = switch (upd) {
@@ -164,17 +171,19 @@ pub fn main() !void {
 
     const patch = .{
         .condition = "from c where c.RegionId = 'EU' ",
-        .operations = .{
-            .{ .op = "replace", .path = "/RegionId", .value = "EU" },
-            .{ .op = "add", .path = "/Items", .value = .{
+        .operations = .{ .{ .op = "replace", .path = "/RegionId", .value = "RU" }, .{
+            .op = "add",
+            .path = "/Items",
+            .value = .{
                 .{ .OrderQty = 1, .ProductId = 1, .UnitPrice = 1219.4589, .LineTotal = 1219.4589 },
                 .{ .OrderQty = 1, .ProductId = 2, .UnitPrice = 219.4589, .LineTotal = 219.4589 },
                 .{ .OrderQty = 1, .ProductId = 3, .UnitPrice = 319.4589, .LineTotal = 319.4589 },
-            },}
-        },
+            },
+        } },
     };
 
-    const patchResult = try containerSO.patchItem(SaleOrder, "202", "202", patch);
+    //patch the item in the container, use appropriate id and partition key
+    const patchResult = try containerSO.patchItem(SaleOrder, "id", "partitionKey", patch);
 
     const patchedItem = switch (patchResult) {
         .Ok => patchResult.Ok,
@@ -183,18 +192,19 @@ pub fn main() !void {
             return;
         },
     };
-    
+
     std.debug.print("\nParsed: {any}\n", .{patchedItem});
 
-    const resultDel = try containerSO.deleteItem(&id, &id);
-    const resultDelItem = switch (resultDel) {
-        .Ok => resultDel.Ok,
-        .Error => {
-            std.debug.print("\nDelete Error: {s}\n", .{resultDel.Error.errorCode});
-            return;
-        },
-    };
+    //delete the item in the container, uncomment the below code and pass the required  id and partition key
 
-    _ = resultDelItem;
+    // const resultDel = try containerSO.deleteItem("id", "partitionKey");
+    // const resultDelItem = switch (resultDel) {
+    //     .Ok => resultDel.Ok,
+    //     .Error => {
+    //         std.debug.print("\nDelete Error: {s}\n", .{resultDel.Error.errorCode});
+    //         return;
+    //     },
+    // };
 
+    // _ = resultDelItem;
 }
