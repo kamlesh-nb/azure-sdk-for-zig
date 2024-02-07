@@ -2,12 +2,9 @@
     .name = "azcosmos",
     .version = "0.0.1",
     .dependencies = .{
-        // .azcore = .{
-        //     .url = "https://github.com/kamlesh-nb/azure-sdk-for-zig/releases/download/22/azcore.tar.gz",
-        //     .hash = "12205f175e2272994a5ec807b7ca4310fe9e8805881bbb03f89f8d4ebdedd73967c2",
-        // },
-        .azcore =  .{
-            .path = "../core",
+        .azcore = .{
+            .url = "https://github.com/kamlesh-nb/azure-sdk-for-zig/releases/download/23/azcore.tar.gz",
+            .hash = "122048737c572916b50b29a22f39fe459edbea8e605efeee2c50d365af690679b389",
         },
     },
 
