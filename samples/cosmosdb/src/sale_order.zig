@@ -1,6 +1,6 @@
 const std = @import("std");
-
-pub const Item = struct {
+ 
+ pub const Item = struct {
     OrderQty: i32,
     ProductId: i32,
     UnitPrice: f64,
@@ -8,17 +8,17 @@ pub const Item = struct {
 };
 
 pub const SaleOrder = struct {
-    id: []const u8,
-    PoNumber: []const u8,
-    OrderDate: []const u8,
-    ShippedDate: []const u8,
-    AccountNumber: []const u8,
-    RegionId: []const u8,
-    SubTotal: f64,
-    TaxAmount: f64,
-    Freight: f64,
-    TotalDue: f64,
-    Items: []Item,
+    id: []const u8 = undefined,
+    PoNumber: []const u8 = undefined,
+    OrderDate: []const u8 = undefined,
+    ShippedDate: []const u8 = undefined,
+    AccountNumber: []const u8 = undefined,
+    RegionId: []const u8 = undefined,
+    SubTotal: f64 = undefined,
+    TaxAmount: f64 = undefined,
+    Freight: f64 = undefined,
+    TotalDue: f64 = undefined,
+    Items: []Item = undefined,
     _rid: []const u8 = undefined,
     _self: []const u8 = undefined,
     _etag: []const u8 = undefined,
@@ -27,7 +27,7 @@ pub const SaleOrder = struct {
 };
 
 pub const SaleOrders = struct {
-    _rid: []const u8,
-    Documents: []SaleOrder,
-    _count: u64,
+    _rid: []const u8 = undefined,
+    Documents: []SaleOrder = undefined,
+    _count: u64 = undefined,
 };

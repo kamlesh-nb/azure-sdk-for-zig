@@ -15,13 +15,13 @@
     // Once all dependencies are fetched, `zig build` no longer requires
     // internet connectivity.
     .dependencies = .{
-        .azcosmos = .{
-            .url = "https://github.com/kamlesh-nb/azure-sdk-for-zig/releases/download/7/azcosmosdb.tar.gz",
-            .hash = "1220a1f01ea68cd6c1f40911f5623d479a224a6bbc49c9c3ffb178a826b635a83bea",
-        },
         .azcore = .{
             .url = "https://github.com/kamlesh-nb/azure-sdk-for-zig/releases/download/23/azcore.tar.gz",
             .hash = "122048737c572916b50b29a22f39fe459edbea8e605efeee2c50d365af690679b389",
+        },
+        .azcosmos = .{
+            .url = "https://github.com/kamlesh-nb/azure-sdk-for-zig/releases/download/AzCosmosDb-R10/azcosmosdb.tar.gz",
+            .hash = "1220f9ac17de05a74fddb51b7c75dd50db79801cf5b7afe33ad6b885e4bb7e89da41",
         },
     },
     .paths = .{

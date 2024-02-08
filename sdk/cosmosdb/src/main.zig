@@ -183,7 +183,7 @@ pub fn main() !void {
     };
 
     //patch the item in the container, use appropriate id and partition key
-    const patchResult = try containerSO.patchItem(SaleOrder, "id", "partitionKey", patch);
+   const patchResult = try containerSO.patchItem(SaleOrder, "id", "partitionKey", patch);
 
     const patchedItem = switch (patchResult) {
         .Ok => patchResult.Ok,

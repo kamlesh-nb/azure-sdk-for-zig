@@ -12,7 +12,6 @@ const cosmos = @import("azcosmos");
 const CosmosClient = cosmos.CosmosClient;
 const Database = cosmos.Database;
 
-
 pub fn main() !void {
     var Arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer Arena.deinit();
@@ -41,7 +40,7 @@ pub fn main() !void {
     var containerSO = switch (con) {
         .Ok => con.Ok,
         .Error => {
-            std.debug.print("\nContainer: {s}\n{s}", .{con.Error.errorCode, con.Error.rawResponse});
+            std.debug.print("\nContainer: {s}\n{s}", .{ con.Error.errorCode, con.Error.rawResponse });
             return;
         },
     };
@@ -142,8 +141,8 @@ pub fn main() !void {
     }
 
     const patch = .{
-        .condition = "from c where c.RegionId = 'EU' ",
-        .operations = .{ .{ .op = "replace", .path = "/RegionId", .value = "RU" }, .{
+        .condition = "from c where c.RegionId = 'RU' ",
+        .operations = .{ .{ .op = "replace", .path = "/RegionId", .value = "EU" }, .{
             .op = "add",
             .path = "/Items",
             .value = .{
@@ -154,8 +153,8 @@ pub fn main() !void {
         } },
     };
 
-    //patch the item in the container, use appropriate id and partition key
-    const patchResult = try containerSO.patchItem(SaleOrder, "id", "partitionKey", patch);
+    // patch the item in the container, use appropriate id and partition key
+    const patchResult = try containerSO.patchItem(SaleOrder, "674c1db176b74bb2", "674c1db176b74bb2", patch);
 
     const patchedItem = switch (patchResult) {
         .Ok => patchResult.Ok,
