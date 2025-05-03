@@ -1,0 +1,64 @@
+name: Component Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      component_name:
+        description: "Component to release"
+        required: true
+      version:
+        description: "Version number (e.g., 1.0.0)"
+        required: true
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      # This step is optional - include a build step if your component needs to be built
+      # - name: Build component
+      #   run: |
+      #     cd components/${{ github.event.inputs.component_name }}
+      #     # Add your build commands here
+
+      - name: Create release directories
+        run: |
+          mkdir -p ./dist
+          mkdir -p ./tmp/${{ github.event.inputs.component_name }}
+
+      - name: Copy component files
+        run: |
+          # Adjust this path based on your monorepo structure
+          cp -r ./sdk/${{ github.event.inputs.component_name }}/* ./tmp/${{ github.event.inputs.component_name }}/
+
+          # Copy common files if needed
+          if [ -f "LICENSE" ]; then
+            cp LICENSE ./tmp/${{ github.event.inputs.component_name }}/
+          fi
+
+          if [ -f "README.md" ]; then
+            cp README.md ./tmp/${{ github.event.inputs.component_name }}/
+          fi
+
+      - name: Create archives
+        run: |
+          cd ./tmp
+          tar -czf ../dist/sdk_${{ github.event.inputs.component_name }}@${{ github.event.inputs.version }}.tar.gz ${{ github.event.inputs.component_name }}
+          zip -r ../dist/sdk_${{ github.event.inputs.component_name }}@${{ github.event.inputs.version }}.zip ${{ github.event.inputs.component_name }}
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.event.inputs.component_name }}@${{ github.event.inputs.version }}
+          name: sdk_${{ github.event.inputs.component_name }}@${{ github.event.inputs.version }}
+          draft: false
+          prerelease: false
+          files: |
+            ./dist/sdk_${{ github.event.inputs.component_name }}@${{ github.event.inputs.version }}.tar.gz
+            ./dist/sdk_${{ github.event.inputs.component_name }}@${{ github.event.inputs.version }}.zip
