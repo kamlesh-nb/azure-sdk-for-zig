@@ -7,7 +7,7 @@ on:
         description: "Component to release"
         required: true
       version:
-        description: "Version number (e.g., 1.0.0)"
+        description: "Version number (e.g., 0.0.1)"
         required: true
 
 jobs:
@@ -55,7 +55,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ github.event.inputs.component_name }}@${{ github.event.inputs.version }}
+          tag_name: azure_${{ github.event.inputs.component_name }}@${{ github.event.inputs.version }}
           name: azure_${{ github.event.inputs.component_name }}@${{ github.event.inputs.version }}
           draft: false
           prerelease: false
