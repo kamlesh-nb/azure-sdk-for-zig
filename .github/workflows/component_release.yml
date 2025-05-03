@@ -4,10 +4,10 @@ on:
   workflow_dispatch:
     inputs:
       component_name:
-        description: 'Component to release'
+        description: "Component to release"
         required: true
       version:
-        description: 'Version number (e.g., 1.0.0)'
+        description: "Version number (e.g., 1.0.0)"
         required: true
 
 jobs:
@@ -34,12 +34,12 @@ jobs:
         run: |
           # Adjust this path based on your monorepo structure
           cp -r ./sdk/${{ github.event.inputs.component_name }}/* ./tmp/${{ github.event.inputs.component_name }}/
-          
+
           # Copy common files if needed
           if [ -f "LICENSE" ]; then
             cp LICENSE ./tmp/${{ github.event.inputs.component_name }}/
           fi
-          
+
           if [ -f "README.md" ]; then
             cp README.md ./tmp/${{ github.event.inputs.component_name }}/
           fi
@@ -47,8 +47,8 @@ jobs:
       - name: Create archives
         run: |
           cd ./tmp
-          tar -czf ../dist/sdk_${{ github.event.inputs.component_name }}@${{ github.event.inputs.version }}.tar.gz ${{ github.event.inputs.component_name }}
-          zip -r ../dist/sdk_${{ github.event.inputs.component_name }}@${{ github.event.inputs.version }}.zip ${{ github.event.inputs.component_name }}
+          tar -czf ../dist/azure_${{ github.event.inputs.component_name }}@${{ github.event.inputs.version }}.tar.gz ${{ github.event.inputs.component_name }}
+          zip -r ../dist/azure_${{ github.event.inputs.component_name }}@${{ github.event.inputs.version }}.zip ${{ github.event.inputs.component_name }}
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
@@ -56,7 +56,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: azure_${{ github.event.inputs.component_name }}@${{ github.event.inputs.version }}
-          name: sdk_${{ github.event.inputs.component_name }}@${{ github.event.inputs.version }}
+          name: azure_${{ github.event.inputs.component_name }}@${{ github.event.inputs.version }}
           draft: false
           prerelease: false
           files: |
