@@ -47,8 +47,8 @@ jobs:
       - name: Create archives
         run: |
           cd ./tmp
-          tar -czf ../dist/azure_${{ github.event.inputs.component_name }}@${{ github.event.inputs.version }}.tar.gz ${{ github.event.inputs.component_name }}
-          zip -r ../dist/azure_${{ github.event.inputs.component_name }}@${{ github.event.inputs.version }}.zip ${{ github.event.inputs.component_name }}
+          tar -czf ../dist/sdk_${{ github.event.inputs.component_name }}@${{ github.event.inputs.version }}.tar.gz ${{ github.event.inputs.component_name }}
+          zip -r ../dist/sdk_${{ github.event.inputs.component_name }}@${{ github.event.inputs.version }}.zip ${{ github.event.inputs.component_name }}
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
