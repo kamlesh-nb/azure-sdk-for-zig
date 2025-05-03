@@ -99,7 +99,7 @@ fn create(self: *Database, id: []const u8, partitionKey: []const u8) anyerror!Ap
     var buf: [6]u8 = undefined;
     const str = try std.fmt.bufPrint(&buf, "{}", .{request.body.buffer.size});
 
-    request.parts.headers.add("Content-Length", str[0..str.len]);
+    request.headers.add("Content-Length", str[0..str.len]);
 
     var response = try self.client.send(ResourceType.colls, rl[0..rl.len], &request);
 

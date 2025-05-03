@@ -8,16 +8,12 @@
             .hash = "1220348dc86b573420dfa6304f6f2d7159766003bb43f30739f8ba210ac75344b52f",
         },
         .tls = .{
-            .url = "https://github.com/kamlesh-nb/tls/archive/refs/tags/v0.0.1.tar.gz",
-            .hash = "12200386ca38d37e25b820cfc94780be2095a6e04818c0ed51c5b6d62021c168197c",
+            .url = "https://github.com/ianic/tls.zig/archive/e866e0f7ca79f7201f0863dfc3009ce57152ade5.tar.gz",
+            .hash = "tls-0.1.0-ER2e0oU3BQAHVDZ6vsvE0vzPFbvhgGgBVFLixlNzTyWG",
         },
         .http = .{
-            .url = "https://github.com/kamlesh-nb/http/archive/refs/tags/v0.0.3.tar.gz",
-            .hash = "1220dbdcd2953ee3291de6afdd85d808c20b3e8a2f86e53a4193feb68097bd421627",
-        },
-        .fetch = .{
-            .url = "https://github.com/kamlesh-nb/fetch/archive/refs/tags/v0.0.3.tar.gz",
-            .hash = "1220ac093c7abd72edcfe3bbd053a194853726c8a07b690c1f197925781326e9862b",
+            .url = "https://github.com/kamlesh-nb/http/archive/refs/tags/v0.0.2.tar.gz",
+            .hash = "http-0.0.11-E0hfTvqwAAC3hNB3PntQY1V4Q1ajmTUdpuFACsgimwbS",
         },
     },
 

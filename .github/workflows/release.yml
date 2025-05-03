@@ -3,14 +3,14 @@ name: Azure Sdk for Zig
 on:
   push:
     tags:
-      - 'sdk/*'  # Pattern for component-specific tags
+      - "sdk/*" # Pattern for component-specific tags
 
 jobs:
   component-release:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        component: [ "core", "cosmosdb" ]  # List all your components
+        component: ["core", "cosmosdb"] # List all your components
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -46,16 +46,16 @@ jobs:
         if: steps.verify-tag.outputs.skip == 'false'
         run: |
           COMPONENT="${{ matrix.component }}"
-          
+
           # Create tar.gz
           tar -czf "release/${COMPONENT}-${VERSION}.tar.gz" -C "sdk" "${COMPONENT}"
-          
+
           # Create zip
           (cd components && zip -r "../release/${COMPONENT}-${VERSION}.zip" "${COMPONENT}")
-          
+
           # Create version file
           echo "${VERSION}" > "release/${COMPONENT}-${VERSION}.version"
-          
+
           # Create checksum
           cd release && sha256sum ${COMPONENT}-* > ${COMPONENT}-${VERSION}.SHA256SUMS
 
@@ -63,7 +63,7 @@ jobs:
         if: steps.verify-tag.outputs.skip == 'false'
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: "sdk/${{ matrix.component }}/v${{ env.VERSION }}"
+          tag_name: "azure_${{ matrix.component }}@${{ env.VERSION }}"
           name: "${{ matrix.component }} v${{ env.VERSION }}"
           body: "Release of ${{ matrix.component }} component version ${{ env.VERSION }}"
           files: |

@@ -70,7 +70,7 @@ pub fn reinitPipeline(client: *CosmosClient) !void {
 pub fn send(client: *CosmosClient, resourceType: ResourceType, resourceLink: []const u8, request: *Request) !Response {
     client.authorization = try Authorization.init(client.allocator);
     defer client.authorization.deinit();
-    try authToken(client, request.*.parts.method, resourceType, resourceLink);
+    try authToken(client, request.*.method, resourceType, resourceLink);
 
     var rdp = RequestDatePolicy.new(client.authorization.timeStamp);
     try client.pipeline.?.policies.add(rdp.policy());
@@ -127,27 +127,27 @@ fn create(client: *CosmosClient, id: []const u8) anyerror!ApiResponse(Database) 
 
     var request = try createRequest(client, r[0..r.len], Method.post, Version.Http11);
 
-    try request.body.set(payload);
+    try request.set(payload);
  
     var buf: [6]u8 = undefined;
-    const str = try std.fmt.bufPrint(&buf, "{}", .{request.body.buffer.size});
+    const str = try std.fmt.bufPrint(&buf, "{}", .{request.body.items.len});
 
-    request.parts.headers.add("Content-Length", str[0..str.len]);
+    request.headers.add("Content-Length", str[0..str.len]);
 
     var response = try client.send(ResourceType.dbs, "", &request);
 
     client.pipeline.?.deinit();
 
-    if (!hasError(request.parts.method, response.parts.status)) {
+    if (!hasError(request.method, response.status)) {
         return ApiResponse(Database){
-            .Ok = Database{ .client = client, .db = try response.body.get(client.allocator, DatabaseResponse) },
+            .Ok = Database{ .client = client, .db = try response.get(DatabaseResponse) },
         };
     } else {
         return ApiResponse(Database){
             .Error = .{
-                .status = @intFromEnum(response.parts.status),
-                .errorCode = response.parts.status.toString(),
-                .rawResponse = response.body.buffer.str(),
+                .status = @intFromEnum(response.status),
+                .errorCode = response.status.toString(),
+                .rawResponse = response.body.items,
             },
         };
     }
@@ -197,8 +197,8 @@ pub fn createRequest(client: *CosmosClient, path: []const u8, verb: Method, vers
 
     var req = try Request.new(client.allocator, uri, verb, version);
 
-    req.parts.headers.add("Host", uri.host.?);
-    req.parts.headers.add("Accept", "application/json");
+    req.headers.add("Host", uri.host.?);
+    req.headers.add("Accept", "application/json");
 
     return req;
 }
