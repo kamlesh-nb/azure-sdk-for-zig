@@ -1,4 +1,4 @@
-name: Component Release
+name: Azure Sdk for Zig - Component Release
 
 on:
   workflow_dispatch:
@@ -60,5 +60,5 @@ jobs:
           draft: false
           prerelease: false
           files: |
-            ./dist/${{ github.event.inputs.component_name }}@${{ github.event.inputs.version }}.tar.gz
-            ./dist/${{ github.event.inputs.component_name }}@${{ github.event.inputs.version }}.zip
+            ./dist/sdk_${{ github.event.inputs.component_name }}@${{ github.event.inputs.version }}.tar.gz
+            ./dist/sdk_${{ github.event.inputs.component_name }}@${{ github.event.inputs.version }}.zip
