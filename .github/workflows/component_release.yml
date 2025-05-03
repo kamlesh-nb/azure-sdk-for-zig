@@ -60,5 +60,5 @@ jobs:
           draft: false
           prerelease: false
           files: |
-            ./dist/sdk_${{ github.event.inputs.component_name }}@${{ github.event.inputs.version }}.tar.gz
-            ./dist/sdk_${{ github.event.inputs.component_name }}@${{ github.event.inputs.version }}.zip
+            ./dist/azure_${{ github.event.inputs.component_name }}@${{ github.event.inputs.version }}.tar.gz
+            ./dist/azure_${{ github.event.inputs.component_name }}@${{ github.event.inputs.version }}.zip
