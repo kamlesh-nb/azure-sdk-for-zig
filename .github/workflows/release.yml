@@ -58,7 +58,7 @@ jobs:
         if: steps.verify-tag.outputs.skip == 'false'
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: "${{ matrix.component }}/v${{ env.VERSION }}"
+          tag_name: "azure_${{ matrix.component }}@${{ env.VERSION }}"
           name: "${{ env.RELEASE_NAME }}"
           body: |
             ## ${{ env.RELEASE_NAME }}
