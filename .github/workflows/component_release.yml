@@ -33,7 +33,7 @@ jobs:
       - name: Copy component files
         run: |
           # Adjust this path based on your monorepo structure
-          cp -r ./components/${{ github.event.inputs.component_name }}/* ./tmp/${{ github.event.inputs.component_name }}/
+          cp -r ./sdk/${{ github.event.inputs.component_name }}/* ./tmp/${{ github.event.inputs.component_name }}/
           
           # Copy common files if needed
           if [ -f "LICENSE" ]; then
