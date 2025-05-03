@@ -55,7 +55,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: sdk_${{ github.event.inputs.component_name }}@${{ github.event.inputs.version }}
+          tag_name: azure_${{ github.event.inputs.component_name }}@${{ github.event.inputs.version }}
           name: sdk_${{ github.event.inputs.component_name }}@${{ github.event.inputs.version }}
           draft: false
           prerelease: false
