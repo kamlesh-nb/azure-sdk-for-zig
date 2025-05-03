@@ -1,45 +1,50 @@
 name: Azure Sdk for Zig
+
 on:
   push:
     tags:
-      - 'azure_*'  # Now looking for mason-* tags
+      - "azure_*@*" # Pattern for mason-component@version tags
 
 jobs:
-  release:
+  create-releases:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Needed for full git history
 
-      - name: Extract component and version
-        id: extract
+      - name: Parse tag information
+        id: tag-info
         run: |
-          # Extract component name and version from tag (mason-component@0.1.0)
-          TAG_NAME=${GITHUB_REF#refs/tags/}
-          COMPONENT=$(echo $TAG_NAME | cut -d '@' -f 1 | sed 's/mason-//')
-          VERSION=$(echo $TAG_NAME | cut -d '@' -f 2)
-          
-          echo "COMPONENT=$COMPONENT" >> $GITHUB_ENV
-          echo "VERSION=$VERSION" >> $GITHUB_ENV
-          echo "RELEASE_NAME=$TAG_NAME" >> $GITHUB_ENV
-          echo "ARCHIVE_NAME=$TAG_NAME" >> $GITHUB_ENV
+          TAG_NAME="${GITHUB_REF#refs/tags/}"
+          COMPONENT="${TAG_NAME%%@*}"
+          COMPONENT="${COMPONENT#mason-}"  # Remove mason- prefix
+          VERSION="${TAG_NAME#*@}"
 
-      - name: Setup environment
+          echo "COMPONENT=${COMPONENT}" >> $GITHUB_ENV
+          echo "VERSION=${VERSION}" >> $GITHUB_ENV
+          echo "RELEASE_NAME=mason-${COMPONENT}@${VERSION}" >> $GITHUB_ENV
+          echo "ARCHIVE_BASENAME=mason-${COMPONENT}@${VERSION}" >> $GITHUB_ENV
+
+      - name: Set up environment
         run: |
           sudo apt-get update
           sudo apt-get install -y zip
           mkdir -p release
 
-      - name: Create archives
+      - name: Create component archive
         run: |
-          # Create tar.gz
-          tar -czf "release/${{ env.ARCHIVE_NAME }}.tar.gz" -C "sdk" "${{ env.COMPONENT }}"
-          
-          # Create zip
-          (cd sdk && zip -r "../release/${{ env.ARCHIVE_NAME }}.zip" "${{ env.COMPONENT }}")
-          
-          # Create checksum
-          cd release && sha256sum ${{ env.ARCHIVE_NAME }}.* > ${{ env.ARCHIVE_NAME }}.sha256
+          # Create tar.gz archive of just this component
+          tar -czf "release/${ARCHIVE_BASENAME}.tar.gz" \
+            --transform "s|^|${ARCHIVE_BASENAME}/|" \
+            "sdk/${COMPONENT}"
+
+          # Create zip archive
+          (cd sdk && zip -r "../release/${ARCHIVE_BASENAME}.zip" "${COMPONENT}")
+
+          # Create checksum file
+          cd release && sha256sum ${ARCHIVE_BASENAME}.* > ${ARCHIVE_BASENAME}.sha256
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
@@ -48,21 +53,22 @@ jobs:
           name: "${{ env.RELEASE_NAME }}"
           body: |
             ## ${{ env.RELEASE_NAME }}
-            
+
             **Component:** ${{ env.COMPONENT }}
             **Version:** ${{ env.VERSION }}
-            
+            **Release Date:** $(date +'%Y-%m-%d')
+
             ### Downloads
-            - [${{ env.ARCHIVE_NAME }}.tar.gz](${{ env.ARCHIVE_NAME }}.tar.gz)
-            - [${{ env.ARCHIVE_NAME }}.zip](${{ env.ARCHIVE_NAME }}.zip)
-            
-            ### Checksum
+            - [${ARCHIVE_BASENAME}.tar.gz](${ARCHIVE_BASENAME}.tar.gz)
+            - [${ARCHIVE_BASENAME}.zip](${ARCHIVE_BASENAME}.zip)
+
+            ### Checksums
             ```sha256
-            $(cat release/${{ env.ARCHIVE_NAME }}.sha256)
+            $(cat release/${ARCHIVE_BASENAME}.sha256)
             ```
           files: |
-            release/${{ env.ARCHIVE_NAME }}.tar.gz
-            release/${{ env.ARCHIVE_NAME }}.zip
-            release/${{ env.ARCHIVE_NAME }}.sha256
+            release/${{ env.ARCHIVE_BASENAME }}.tar.gz
+            release/${{ env.ARCHIVE_BASENAME }}.zip
+            release/${{ env.ARCHIVE_BASENAME }}.sha256
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
