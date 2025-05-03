@@ -3,85 +3,73 @@ name: Azure Sdk for Zig
 on:
   push:
     tags:
-      - "v*"
+      - 'sdk/*'  # Pattern for component-specific tags
 
 jobs:
-  create-release-archives:
+  component-release:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        component: [ "core", "cosmosdb" ]  # List all your components
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # Required for full git history to detect changes
+          fetch-depth: 0
+
+      - name: Verify component tag
+        id: verify-tag
+        run: |
+          if [[ "$GITHUB_REF" != refs/tags/sdk/${{ matrix.component }}/* ]]; then
+            echo "::warning::Skipping ${{ matrix.component }} - no matching tag"
+            echo "skip=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          echo "skip=false" >> $GITHUB_OUTPUT
 
       - name: Extract version from tag
+        if: steps.verify-tag.outputs.skip == 'false'
         id: version
         run: |
-          VERSION="${GITHUB_REF#refs/tags/v}"
+          VERSION="${GITHUB_REF#refs/tags/sdk/${{ matrix.component }}/v}"
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
           echo "VERSION=${VERSION}" >> $GITHUB_ENV
 
       - name: Set up environment
+        if: steps.verify-tag.outputs.skip == 'false'
         run: |
           sudo apt-get update
           sudo apt-get install -y zip
           mkdir -p release
 
-      - name: Detect changed components
-        id: changed-components
-        run: |
-          # Get previous tag if it exists
-          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
-
-          if [ -z "$PREV_TAG" ]; then
-            # First release - include all components
-            COMPONENTS=$(ls sdk/ | tr '\n' ' ')
-          else
-            # Get changed files since last tag
-            CHANGED_FILES=$(git diff --name-only $PREV_TAG HEAD)
-            
-            # Find components with changes
-            COMPONENTS=""
-            for COMPONENT in $(ls sdk/); do
-              if echo "$CHANGED_FILES" | grep -q "^sdk/${COMPONENT}/"; then
-                COMPONENTS="${COMPONENTS} ${COMPONENT}"
-              fi
-            done
-            
-            # If no components changed, default to all
-            if [ -z "$COMPONENTS" ]; then
-              COMPONENTS=$(ls sdk/ | tr '\n' ' ')
-            fi
-          fi
-
-          echo "components=${COMPONENTS}" >> $GITHUB_OUTPUT
-          echo "COMPONENTS='${COMPONENTS}'" >> $GITHUB_ENV
-
       - name: Create component archives
+        if: steps.verify-tag.outputs.skip == 'false'
         run: |
-          for COMPONENT in $COMPONENTS; do
-            echo "Packaging $COMPONENT..."
-            
-            # Create tar.gz
-            tar -czf "release/${COMPONENT}-${VERSION}.tar.gz" -C "sdk" "${COMPONENT}"
-            
-            # Create zip
-            (cd sdk && zip -r "../release/${COMPONENT}-${VERSION}.zip" "${COMPONENT}")
-            
-            # Create version file
-            echo "${VERSION}" > "release/${COMPONENT}-${VERSION}.version"
-          done
+          COMPONENT="${{ matrix.component }}"
+          
+          # Create tar.gz
+          tar -czf "release/${COMPONENT}-${VERSION}.tar.gz" -C "sdk" "${COMPONENT}"
+          
+          # Create zip
+          (cd components && zip -r "../release/${COMPONENT}-${VERSION}.zip" "${COMPONENT}")
+          
+          # Create version file
+          echo "${VERSION}" > "release/${COMPONENT}-${VERSION}.version"
+          
+          # Create checksum
+          cd release && sha256sum ${COMPONENT}-* > ${COMPONENT}-${VERSION}.SHA256SUMS
 
-          # Create checksums
-          cd release && sha256sum * > SHA256SUMS
-
-      - name: Upload release assets
+      - name: Create GitHub Release
+        if: steps.verify-tag.outputs.skip == 'false'
         uses: softprops/action-gh-release@v1
         with:
+          tag_name: "sdk/${{ matrix.component }}/v${{ env.VERSION }}"
+          name: "${{ matrix.component }} v${{ env.VERSION }}"
+          body: "Release of ${{ matrix.component }} component version ${{ env.VERSION }}"
           files: |
-            release/*.tar.gz
-            release/*.zip
-            release/*.version
-            release/SHA256SUMS
+            release/${{ matrix.component }}-${{ env.VERSION }}.tar.gz
+            release/${{ matrix.component }}-${{ env.VERSION }}.zip
+            release/${{ matrix.component }}-${{ env.VERSION }}.version
+            release/${{ matrix.component }}-${{ env.VERSION }}.SHA256SUMS
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
