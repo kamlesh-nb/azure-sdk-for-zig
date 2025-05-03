@@ -1,81 +1,68 @@
 name: Azure Sdk for Zig
-
 on:
   push:
     tags:
-      - "sdk/*"
+      - 'azure_*'  # Now looking for mason-* tags
 
 jobs:
-  sdk-release:
+  release:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        component: ["core", "cosmosdb"] # Update with your components
     steps:
-      - name: Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
-      - name: Verify SDK component tag
-        id: verify-tag
+      - name: Extract component and version
+        id: extract
         run: |
-          if [[ "$GITHUB_REF" != refs/tags/sdk/${{ matrix.component }}/* ]]; then
-            echo "skip=true" >> $GITHUB_OUTPUT
-            exit 0
-          fi
-          echo "skip=false" >> $GITHUB_OUTPUT
+          # Extract component name and version from tag (mason-component@0.1.0)
+          TAG_NAME=${GITHUB_REF#refs/tags/}
+          COMPONENT=$(echo $TAG_NAME | cut -d '@' -f 1 | sed 's/mason-//')
+          VERSION=$(echo $TAG_NAME | cut -d '@' -f 2)
+          
+          echo "COMPONENT=$COMPONENT" >> $GITHUB_ENV
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "RELEASE_NAME=$TAG_NAME" >> $GITHUB_ENV
+          echo "ARCHIVE_NAME=$TAG_NAME" >> $GITHUB_ENV
 
-      - name: Extract version from tag
-        if: steps.verify-tag.outputs.skip == 'false'
-        id: version
-        run: |
-          VERSION="${GITHUB_REF#refs/tags/sdk/${{ matrix.component }}/v}"
-          echo "version=${VERSION}" >> $GITHUB_OUTPUT
-          echo "VERSION=${VERSION}" >> $GITHUB_ENV
-          echo "RELEASE_NAME=azure_${{ matrix.component }}@${VERSION}" >> $GITHUB_ENV
-
-      - name: Set up environment
-        if: steps.verify-tag.outputs.skip == 'false'
+      - name: Setup environment
         run: |
           sudo apt-get update
           sudo apt-get install -y zip
           mkdir -p release
 
-      - name: Create component archives
-        if: steps.verify-tag.outputs.skip == 'false'
+      - name: Create archives
         run: |
           # Create tar.gz
-          tar -czf "release/${{ env.RELEASE_NAME }}.tar.gz" -C "sdk" "${{ matrix.component }}"
-
+          tar -czf "release/${{ env.ARCHIVE_NAME }}.tar.gz" -C "sdk" "${{ env.COMPONENT }}"
+          
           # Create zip
-          (cd sdk && zip -r "../release/${{ env.RELEASE_NAME }}.zip" "${{ matrix.component }}")
-
+          (cd sdk && zip -r "../release/${{ env.ARCHIVE_NAME }}.zip" "${{ env.COMPONENT }}")
+          
           # Create checksum
-          cd release && sha256sum ${{ env.RELEASE_NAME }}.* > ${{ env.RELEASE_NAME }}.sha256
+          cd release && sha256sum ${{ env.ARCHIVE_NAME }}.* > ${{ env.ARCHIVE_NAME }}.sha256
 
       - name: Create GitHub Release
-        if: steps.verify-tag.outputs.skip == 'false'
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: "azure_${{ matrix.component }}@${{ env.VERSION }}"
+          tag_name: "${{ env.RELEASE_NAME }}"
           name: "${{ env.RELEASE_NAME }}"
           body: |
             ## ${{ env.RELEASE_NAME }}
-
-            **Release Date:** $(date +'%Y-%m-%d')
-
-            ### Artifacts
-            - [${{ env.RELEASE_NAME }}.tar.gz](${{ env.RELEASE_NAME }}.tar.gz)
-            - [${{ env.RELEASE_NAME }}.zip](${{ env.RELEASE_NAME }}.zip)
-
+            
+            **Component:** ${{ env.COMPONENT }}
+            **Version:** ${{ env.VERSION }}
+            
+            ### Downloads
+            - [${{ env.ARCHIVE_NAME }}.tar.gz](${{ env.ARCHIVE_NAME }}.tar.gz)
+            - [${{ env.ARCHIVE_NAME }}.zip](${{ env.ARCHIVE_NAME }}.zip)
+            
             ### Checksum
             ```sha256
-            $(cat release/${{ env.RELEASE_NAME }}.sha256)
+            $(cat release/${{ env.ARCHIVE_NAME }}.sha256)
             ```
           files: |
-            release/${{ env.RELEASE_NAME }}.tar.gz
-            release/${{ env.RELEASE_NAME }}.zip
-            release/${{ env.RELEASE_NAME }}.sha256
+            release/${{ env.ARCHIVE_NAME }}.tar.gz
+            release/${{ env.ARCHIVE_NAME }}.zip
+            release/${{ env.ARCHIVE_NAME }}.sha256
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
