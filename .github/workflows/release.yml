@@ -1,0 +1,87 @@
+name: Azure Sdk for Zig
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  create-release-archives:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Required for full git history to detect changes
+
+      - name: Extract version from tag
+        id: version
+        run: |
+          VERSION="${GITHUB_REF#refs/tags/v}"
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "VERSION=${VERSION}" >> $GITHUB_ENV
+
+      - name: Set up environment
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y zip
+          mkdir -p release
+
+      - name: Detect changed components
+        id: changed-components
+        run: |
+          # Get previous tag if it exists
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+
+          if [ -z "$PREV_TAG" ]; then
+            # First release - include all components
+            COMPONENTS=$(ls sdk/ | tr '\n' ' ')
+          else
+            # Get changed files since last tag
+            CHANGED_FILES=$(git diff --name-only $PREV_TAG HEAD)
+            
+            # Find components with changes
+            COMPONENTS=""
+            for COMPONENT in $(ls sdk/); do
+              if echo "$CHANGED_FILES" | grep -q "^sdk/${COMPONENT}/"; then
+                COMPONENTS="${COMPONENTS} ${COMPONENT}"
+              fi
+            done
+            
+            # If no components changed, default to all
+            if [ -z "$COMPONENTS" ]; then
+              COMPONENTS=$(ls sdk/ | tr '\n' ' ')
+            fi
+          fi
+
+          echo "components=${COMPONENTS}" >> $GITHUB_OUTPUT
+          echo "COMPONENTS='${COMPONENTS}'" >> $GITHUB_ENV
+
+      - name: Create component archives
+        run: |
+          for COMPONENT in $COMPONENTS; do
+            echo "Packaging $COMPONENT..."
+            
+            # Create tar.gz
+            tar -czf "release/${COMPONENT}-${VERSION}.tar.gz" -C "sdk" "${COMPONENT}"
+            
+            # Create zip
+            (cd sdk && zip -r "../release/${COMPONENT}-${VERSION}.zip" "${COMPONENT}")
+            
+            # Create version file
+            echo "${VERSION}" > "release/${COMPONENT}-${VERSION}.version"
+          done
+
+          # Create checksums
+          cd release && sha256sum * > SHA256SUMS
+
+      - name: Upload release assets
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            release/*.tar.gz
+            release/*.zip
+            release/*.version
+            release/SHA256SUMS
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

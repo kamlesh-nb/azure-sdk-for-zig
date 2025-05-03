@@ -1,12 +1,9 @@
 ## Azure Sdk for Zig
 
->[!Note]
-> I have stopped work on this, will resume after async/await is reinstated in the language
-
 > [!CAUTION]
 > This is an experimental project and just meant to be used for experimenting zig on azure.
 
-What has been developed as of now.
+What's be developed as of now.
 
 - Core Runtime that processes the request for Azure Rest Api's
 - CosmosDb Client, that can;

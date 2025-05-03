@@ -1,7 +1,7 @@
 .{
-    .name = "azcore",
+    .name = .azcore,
     .version = "0.0.1",
-
+    .fingerprint = 0x8bc1df61c3388cc8,
     .dependencies = .{
         .datetime = .{
             .url = "https://github.com/kamlesh-nb/datetime/archive/refs/tags/v0.0.1.tar.gz",

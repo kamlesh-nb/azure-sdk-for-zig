@@ -5,11 +5,6 @@ pub fn build(b: *std.Build) void {
 
     const optimize = b.standardOptimizeOption(.{});
 
-    const azcore = b.dependency("azcore", .{
-        .target = target,
-        .optimize = optimize,
-    }).module("azcore");
-
     const lib = b.addStaticLibrary(.{
         .name = "azcosmosdb",
         .root_source_file = .{ .path = "src/root.zig" },
@@ -19,14 +14,18 @@ pub fn build(b: *std.Build) void {
 
     _ = b.addModule("azcosmos", .{
         .root_source_file = .{ .path = "src/root.zig" },
-            .imports = &.{
-                .{
-                    .name = "azcore",
-                    .module = azcore,
-                },
-            },
+        // .imports = &.{
+        //     .{
+        //         .name = "azcore",
+        //         .module = b.dependency("azcore", .{}).module("azcore"),
+        //     },
+        // },
     });
-    lib.root_module.addImport("azcore", azcore);
+
+    lib.root_module.addImport("azcore", b.dependency("azcore", .{
+        .target = target,
+        .optimize = optimize,
+    }).module("azcore"));
 
     b.installArtifact(lib);
 

@@ -13,8 +13,6 @@ const ClientOptions = @import("options/client_options.zig");
 const Policy = @import("policies/policy.zig").Policy;
 const Pipeline = @import("pipeline.zig");
 
-
-
 pub const TryPolicy = struct {
     value: []const u8,
 
@@ -31,13 +29,10 @@ pub const TryPolicy = struct {
     pub fn policy(self: *TryPolicy) Policy {
         return Policy{
             .ptr = self,
-            .value = self.value,
             .sendFn = send,
         };
     }
 };
-
-
 
 pub fn main() !void {
     var Arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
@@ -45,7 +40,7 @@ pub fn main() !void {
     const allocator = Arena.allocator();
 
     const options = try ClientOptions.new(allocator, "azure.core.zig.v0.0.1");
- 
+
     var tr = TryPolicy.new("try");
 
     var pipeline = try Pipeline.init(allocator);
@@ -55,6 +50,14 @@ pub fn main() !void {
     var tep = TelemetryPolicy.new("azure.core.zig.v0.0.1");
     try pipeline.policies.add(tep.policy());
     try pipeline.addDefaults(options);
+
+    var rp = RetryPolicy.new(options.retry);
+    var tp = TransportPolicy.new(options.transport);
+    
+    const p1 = .{ rp.policy(), tp.policy() };
+    const p2 = .{ tr.policy(), tep.policy() };
+    const p3 = p2 ++ p1;
+    _ = p3;
 
     const uri = std.Uri{
         .scheme = "https",

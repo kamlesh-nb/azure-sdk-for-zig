@@ -7,13 +7,13 @@ pub fn build(b: *std.Build) void {
 
     const lib = b.addStaticLibrary(.{
         .name = "azcore",
-        .root_source_file = .{ .path = "src/root.zig" },
+        .root_source_file = b.path("src/root.zig"),
         .target = target,
         .optimize = optimize,
     });
 
     _ = b.addModule("azcore", .{
-        .root_source_file = .{ .path = "src/root.zig" },
+        .root_source_file = b.path("src/root.zig"),
         .imports = &.{
             .{
                 .name = "datetime",
@@ -58,7 +58,7 @@ pub fn build(b: *std.Build) void {
 
     const exe = b.addExecutable(.{
         .name = "azcore",
-        .root_source_file = .{ .path = "src/main.zig" },
+        .root_source_file = b.path("src/main.zig"),
         .target = target,
         .optimize = optimize,
     });
@@ -104,10 +104,30 @@ pub fn build(b: *std.Build) void {
     // const run_lib_unit_tests = b.addRunArtifact(lib_unit_tests);
 
     const exe_unit_tests = b.addTest(.{
-        .root_source_file = .{ .path = "src/main.zig" },
+        .root_source_file = b.path("src/main.zig") ,
         .target = target,
         .optimize = optimize,
     });
+
+    exe_unit_tests.root_module.addImport("datetime", b.dependency("datetime", .{
+        .target = target,
+        .optimize = optimize,
+    }).module("datetime"));
+
+    exe_unit_tests.root_module.addImport("fetch", b.dependency("fetch", .{
+        .target = target,
+        .optimize = optimize,
+    }).module("fetch"));
+
+    exe_unit_tests.root_module.addImport("http", b.dependency("http", .{
+        .target = target,
+        .optimize = optimize,
+    }).module("http"));
+
+    exe_unit_tests.root_module.addImport("tls", b.dependency("tls", .{
+        .target = target,
+        .optimize = optimize,
+    }).module("tls"));
 
     const run_exe_unit_tests = b.addRunArtifact(exe_unit_tests);
 

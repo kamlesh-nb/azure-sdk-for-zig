@@ -1,5 +1,5 @@
 .{
-    .name = "azblob",
+    .name = .azblob,
     .version = "0.0.1",
     .dependencies = .{
         .azcore = .{

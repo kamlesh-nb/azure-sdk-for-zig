@@ -66,3 +66,15 @@ pub fn send(self: *Pipeline, arena: *std.heap.ArenaAllocator, request: *Request)
 pub fn deinit(self: *Pipeline) void {
     self.policies.deinit();
 }
+
+test "policy-concat" {
+    // const options = try ClientOptions.new(std.testing.allocator, "azure.cosmosdb.zig-v.0.01");
+    // var rp = RetryPolicy.new(options.retry);
+    // var tp = TransportPolicy.new(options.transport);
+    // var telemetry = TelemetryPolicy.new(options.telemetry);
+    // const p:[2]Policy = .{rp.policy(), tp.policy()};
+    // const p2:[3]Policy = .{rp.policy(), tp.policy(), telemetry.policy()};
+    // const p3 = p ++ p2;
+    // _ = p3;
+    std.debug.print("policy-concat\n", .{});
+}
