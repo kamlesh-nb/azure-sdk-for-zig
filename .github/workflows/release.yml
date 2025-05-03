@@ -3,14 +3,14 @@ name: Azure Sdk for Zig
 on:
   push:
     tags:
-      - 'sdk/*'
+      - "sdk/*"
 
 jobs:
   sdk-release:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        component: ["core", "cosmosdb"]  # Update with your components
+        component: ["core", "cosmosdb"] # Update with your components
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -33,7 +33,7 @@ jobs:
           VERSION="${GITHUB_REF#refs/tags/sdk/${{ matrix.component }}/v}"
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
           echo "VERSION=${VERSION}" >> $GITHUB_ENV
-          echo "RELEASE_NAME=mason_${{ matrix.component }}@${VERSION}" >> $GITHUB_ENV
+          echo "RELEASE_NAME=azure_${{ matrix.component }}@${VERSION}" >> $GITHUB_ENV
 
       - name: Set up environment
         if: steps.verify-tag.outputs.skip == 'false'
@@ -47,10 +47,10 @@ jobs:
         run: |
           # Create tar.gz
           tar -czf "release/${{ env.RELEASE_NAME }}.tar.gz" -C "sdk" "${{ matrix.component }}"
-          
+
           # Create zip
           (cd sdk && zip -r "../release/${{ env.RELEASE_NAME }}.zip" "${{ matrix.component }}")
-          
+
           # Create checksum
           cd release && sha256sum ${{ env.RELEASE_NAME }}.* > ${{ env.RELEASE_NAME }}.sha256
 
@@ -58,17 +58,17 @@ jobs:
         if: steps.verify-tag.outputs.skip == 'false'
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: "sdk/${{ matrix.component }}/v${{ env.VERSION }}"
+          tag_name: "azure_${{ matrix.component }}@${{ env.VERSION }}"
           name: "${{ env.RELEASE_NAME }}"
           body: |
             ## ${{ env.RELEASE_NAME }}
-            
+
             **Release Date:** $(date +'%Y-%m-%d')
-            
+
             ### Artifacts
             - [${{ env.RELEASE_NAME }}.tar.gz](${{ env.RELEASE_NAME }}.tar.gz)
             - [${{ env.RELEASE_NAME }}.zip](${{ env.RELEASE_NAME }}.zip)
-            
+
             ### Checksum
             ```sha256
             $(cat release/${{ env.RELEASE_NAME }}.sha256)
